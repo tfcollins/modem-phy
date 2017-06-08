@@ -1,4 +1,4 @@
-function frame = FindFrameStart(signal, xPreamble)
+function [frame,ind] = FindFrameStart(signal, xPreamble)
 
 preambleLength = length(xPreamble);
 
@@ -6,30 +6,20 @@ preambleLength = length(xPreamble);
 eng = mean(abs(signal).^2); % Mean power
 cor = abs(filter(xPreamble(end:-1:1).',1,signal));
 stem(cor);
+% look in first half only
+cor = cor(1:floor(length(cor)/2));
 [val,ind] = max(cor);
 
-% Reduce peaks
-reduced = cor>0.8*val;
-
-% Check gaps
-indexes = 1:length(reduced);
-valids = indexes(reduced==1);
-
 % The max should be at least X times the mean
-if (val/eng) > 4 %(Larger makes more selective)
-%if (valids(2) - valids(1))==preambleLength/3    
+if (val/eng) > 4 %(Larger makes more selective)    
     % Correct to edge of preamble
-    ind = valids(1) - preambleLength;
-    % Compare with true
-    %est = ind - filterSymbolSpan; % compensate for filter delay
-    %fprintf('True Delay %f | Estimate %f %f\n',delay,ind,est);
-    %found = found + 1;
-    %indexErrors(found) = abs(delay-est);
-    frame = signal(ind+1:end);
+    ind = ind - preambleLength;
+    frame = signal(ind+1:end); % Includes preamble
     % Get orientation
     phaseEst = round(angle(mean(conj(xPreamble) .* frame(1:preambleLength)))*2/pi)/2*pi;
     % Compensating for the phase offset
     frame = frame .* exp(-1i*phaseEst);
+    %[frame(1:10),xPreamble(1:10)]
 else
     frame = [];
 end

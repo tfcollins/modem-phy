@@ -4,10 +4,10 @@ hStream   = RandStream.create('mt19937ar', 'seed', 12345);
 
 %% Frame parameters
 Rsym      = 1e6;  % Symbol rate (Hz)
-nAGCTrain = 400;  % Number of training symbols
-nTrain    = 1000;  % Number of training symbols
-nPayload  = 1e5;  % Number of payload symbols
-nTail     = 20;   % Number of tail symbols
+nAGCTrain = 100;  % Number of training symbols
+nTrain    = 250;  % Number of training symbols
+nPayload  = 4e4;  % Number of payload symbols
+nTail     = 400;  % Number of tail symbols (enough to flush filters)
 
 %% Frame start marker
 barker = comm.BarkerCode('SamplesPerFrame', 14);
@@ -19,11 +19,16 @@ bitsPerSym = 2;                              % Number of bits per PSK symbol
 M = 2^bitsPerSym;                            % Modulation order
 hPSKMod   = comm.PSKModulator(M, ...
     'PhaseOffset',0, ...
-    'SymbolMapping','Binary');
+    'SymbolMapping','Binary',...
+    'BitInput', true);
 hPSKDemod = comm.PSKDemodulator(M, ...
     'PhaseOffset',0, ...
-    'SymbolMapping','Binary');
+    'SymbolMapping','Binary',...
+    'BitOutput', true);
 hPSKModPreamble   = comm.PSKModulator(M, ...
+    'PhaseOffset',0, ...
+    'SymbolMapping','Binary');
+hPSKModTrain   = comm.PSKModulator(M, ...
     'PhaseOffset',0, ...
     'SymbolMapping','Binary');
 PSKConstellation = constellation(hPSKMod).'; % PSK constellation
@@ -33,10 +38,10 @@ xAGCTrainData = randi(hStream, [0 M-1], nAGCTrain, 1);
 xTrainData = randi(hStream, [0 M-1], nTrain, 1);
 xTailData  = randi(hStream, [0 M-1], nTail, 1);
 
-xPreamble  = step(hPSKMod,preamble);
-xAGCTrain  = step(hPSKMod,xAGCTrainData);
-xTrain     = step(hPSKMod,xTrainData);
-xTail      = step(hPSKMod,xTailData);
+xPreamble  = step(hPSKModTrain,preamble);
+xAGCTrain  = step(hPSKModTrain,xAGCTrainData);
+xTrain     = step(hPSKModTrain,xTrainData);
+xTail      = step(hPSKModTrain,xTailData);
 
 %% Filters
 chanFilterSpan = 128;  % Filter span in symbols
@@ -52,6 +57,12 @@ hRxFilt = comm.RaisedCosineReceiveFilter( ...
     'InputSamplesPerSymbol',sampPerSymChan, ...
     'DecimationFactor',1);
 
+hRxFiltPD = comm.RaisedCosineReceiveFilter( ...
+    'RolloffFactor',0.5, ...
+    'FilterSpanInSymbols',chanFilterSpan, ...
+    'InputSamplesPerSymbol',sampPerSymChan, ...
+    'DecimationFactor',sampPerSymChan);
+
 % Calculate the samples per symbol after the receive filter
 sampPerSymPostRx = sampPerSymChan/hRxFilt.DecimationFactor;
 % Calculate the delay in samples from both channel filters
@@ -60,7 +71,7 @@ chanFilterDelay = chanFilterSpan*sampPerSymPostRx;
 %% Channel
 hAWGNChan = comm.AWGNChannel( ...
     'NoiseMethod','Signal to noise ratio (Es/No)', ...
-    'EsNo',30, ...
+    'EsNo',10, ...
     'SamplesPerSymbol',sampPerSymChan);
 
 % Configure a frequency-flat Rayleigh channel System object with the
@@ -70,14 +81,14 @@ hRayleighChan = comm.RayleighChannel( ...
     'MaximumDopplerShift',30);
 
 % Frequency Offset
-trueOffset = 1000;
+trueOffset = 0;
 fo = comm.PhaseFrequencyOffset('SampleRate', Rsym,...
     'FrequencyOffset', trueOffset);
 % Timing offset
 vd = dsp.VariableFractionalDelay;
 
 %% Channel
-channel = 'qpsk';
+channel = 'radio';
 FrequencyOffset = 1000;
 
 switch channel
@@ -87,7 +98,7 @@ switch channel
         PhaseOffset = 45;
         FrameSize = nPayload;
         UpSample = sampPerSymChan;
-        EbNo = 13;
+        EbNo = 15;
         BitsPerSymbol = 2;
         frameCount = 10;
         
@@ -118,32 +129,45 @@ end
 
 %% CFO Correct
 DampingFactor = 0.9;
-NormalizedLoopBandwidth =  0.01;
+NormalizedLoopBandwidth =  0.1;
 csync = comm.CarrierSynchronizer( ...
     'DampingFactor', DampingFactor, ...
     'NormalizedLoopBandwidth', NormalizedLoopBandwidth, ...
-    'SamplesPerSymbol', sampPerSymChan/2,...
+    'SamplesPerSymbol', 1,...sampPerSymChan/2
     'Modulation','QPSK',...
     'ModulationPhaseOffset','Custom');
 
 %% Timing
 symsync = comm.SymbolSynchronizer( ...
     'TimingErrorDetector','Gardner (non-data-aided)',...
-    'SamplesPerSymbol', 4, ...
+    'SamplesPerSymbol', sampPerSymChan, ...
     'DampingFactor', sqrt(2)/2, ...
     'NormalizedLoopBandwidth', 0.01);
 
 %% Equalization
-% % Configure an adaptive equalizer object
-% stepSize = 0.1; % Step size for LMS algorithm
-% alg = lms(stepSize);  % Adaptive algorithm object
-% %forgetFactor = 0.99;  % RLS algorithm forgetting factor
-% %alg = rls(forgetFactor);  % RLS algorithm object
-% nFwdWeights = 6;  % Number of feedforward equalizer weights
-% nFbkWeights = 2;  % Number of feedback filter weights
-% eqObj = dfe(nFwdWeights, nFbkWeights,alg,PSKConstellation,sampPerSymPostRx);
-% eqObj.RefTap = 3;
-% eqDelayInSym = (eqObj.RefTap-1)/sampPerSymPostRx;
+useEqualizer = true;
+% Configure an adaptive equalizer object
+stepSize = 0.1; % Step size for LMS algorithm
+alg = lms(stepSize);  % Adaptive algorithm object
+%forgetFactor = 0.99;  % RLS algorithm forgetting factor
+%alg = rls(forgetFactor);  % RLS algorithm object
+nFwdWeights = 6;  % Number of feedforward equalizer weights
+nFbkWeights = 2;  % Number of feedback filter weights
+sampPerSymPostRx = 1;
+eqObj = dfe(nFwdWeights, nFbkWeights,alg,PSKConstellation,sampPerSymPostRx);
+eqObj.RefTap = 3;
+eqDelayInSym = (eqObj.RefTap-1)/sampPerSymPostRx;
+
+%% Channel coding and scrambler
+trellis = poly2trellis(7,[171 133]);
+tbl = 32;
+rate = 1/2;
+N = 2;
+scr  = comm.Scrambler(N, '1 + z^-2 + z^-3 + z^-5 + z^-7',...
+    'InitialConditions',[0 1 0 0 0 1 0]);
+descr = comm.Descrambler(N, '1 + z^-2 + z^-3 + z^-5 + z^-7',...
+    'InitialConditions',[0 1 0 0 0 1 0]);
+
 
 %% Visuals
 constd = comm.ConstellationDiagram('SamplesPerSymbol', 1,...
@@ -154,12 +178,18 @@ constd2 = comm.ConstellationDiagram('SamplesPerSymbol', 1,...
     'MeasurementInterval',1024);
 
 %% Simulation
-nBlocks = 30;  % Number of transmission blocks in simulation
+nBlocks = 1;  % Number of transmission blocks in simulation
 BERvect = zeros(nBlocks,1);
-for block = 1:1
+for block = 1:nBlocks
     % Generate data
-    txData = randi(hStream, [0 hPSKMod.ModulationOrder-1], nPayload, 1);
-    xPayload = step(hPSKMod, txData);  % Payload symbols
+    txData = randi(hStream, [0 1], nPayload*log2(hPSKMod.ModulationOrder)*rate, 1);
+    % Convolutionally encode the data
+    txDataEnc = convenc(txData,trellis);
+    % Scramble
+    txDataScram = scr(txDataEnc);
+    % Modulate
+    xPayload = step(hPSKMod, txDataScram);
+    % Build frame
     x = [xAGCTrain; xPreamble; xPreamble; xTrain; xPayload; xTail];  % Transmitted block
     
     % TX filtering
@@ -168,15 +198,17 @@ for block = 1:1
     % Channel
     switch channel
         case 'qpsk'
-            rxSig = qpskChan(txSig,frameCount);
+            txSigDelayed = [zeros(100*4,1);txSig];
+            rxSig = qpskChan(txSigDelayed,block);
         case 'radio'
             tx.transmitRepeat(txSig);
+            %tx(txSig);
             for i=1:3
                 rxSig = rx();
             end
         case 'basic'
             % Add random delay
-            txSigDelayed = [zeros(100,1);txSig];            
+            txSigDelayed = [zeros(100,1);txSig];
             %chOut  = step(hRayleighChan, txSig);  % Rayleigh multipath channel
             chOut = fo(txSigDelayed);
             %chOut = filter([zeros(chanFilterDelay,1);1;0;0], 1, txSig);
@@ -184,49 +216,65 @@ for block = 1:1
             rxSig  = step(hAWGNChan, chanDelay);      % AWGN channel
     end
     
+    % Packet detect
+    sigFilt = hRxFiltPD(rxSig);
+    found = PacketDetector(sigFilt,xPreamble);
+    
     % RX filtering
     rxSamp = step(hRxFilt, rxSig);        % Receive filter
     
     % Timing recover
     rxSampTC = symsync(rxSamp);
     
+    
     % Frequency Correct
     [rxSampFC,phase] = csync(rxSampTC);
-    instantaneous_frequency = convertPhaseToFrequency(phase,Rsym,sampPerSymChan/2);
+    instantaneous_frequency = convertPhaseToFrequency(phase,Rsym,1);
     plot(instantaneous_frequency);
     hold on; plot(1.*ones(size(instantaneous_frequency)).*trueOffset,'r');hold off;
     
     % Locate start of frame
-    frame = FindFrameStart(rxSampFC, xPreamble);
+    frame = FindFrameStart(rxSampFC, [xPreamble;xPreamble]);
     
-    % Equalize using equalizer object. First select training and payload
-    % samples, accounting for filter delay and equalizer delay.
-    %rxTrainPayloadSamp = rxSampFC(chanFilterDelay + (1:sampPerSymPostRx*(eqDelayInSym + nTrain + nPayload)));
-    %rxTrainPayloadSamp = frame(1:sampPerSymPostRx*(eqDelayInSym + nTrain + nPayload));
-    %rxTrainPayloadSamp = frame(1:sampPerSymPostRx*(nTrain + nPayload));
-    rxTrainPayloadSamp = frame(1:end);
-    rxTrainPayloadSym = dfe_frac(rxTrainPayloadSamp, xTrain, 7, 3, 1, PSKConstellation, chanFilterDelay);
-    %[rxTrainPayloadSym, ~, err] = equalize(eqObj, rxTrainPayloadSamp, xTrain);
-    
-    % Extract and evaluate payload
-    %rxPayloadEq = rxTrainPayloadSym(eqDelayInSym + nTrain + (1:nPayload));
+    if useEqualizer
+        % Equalize using equalizer object. First select training and payload
+        % samples, accounting for filter delay and equalizer delay.
+        rxTrainPlusPayload = frame;
+        chanFilterDelay = length(xPreamble)*2;
+        rxTrainPayloadSym = dfe_frac(frame, xTrain, 7, 3, 1, PSKConstellation, chanFilterDelay);
+        %[rxTrainPayloadSym, ~, err] = equalize(eqObj, rxTrainPayloadSamp, xTrain);
+        % Extract and evaluate payload
+        rxPayloadEq = rxTrainPayloadSym(chanFilterDelay + nTrain + (1:nPayload));
+    else
+        rxPayloadEq = frame(length(xPreamble)*2 + nTrain + (1:nPayload));
+    end
     
     %% Visualize constellations
-    %inds = sampPerSymChan/2 * 100;
-    inds = 1024;
-    for k=1:inds:length(rxTrainPayloadSym)-inds
+    inds = constd.MeasurementInterval;
+    for k=1:inds:length(rxPayloadEq)-inds
         constd(rxSig(k:k+inds-1));
-        constd2(rxTrainPayloadSym(k:k+inds-1));
+        constd2(rxPayloadEq(k:k+inds-1));
         pause(0.1);
     end
+    
+    %% Demodulate and decode
+    rxData = step(hPSKDemod, rxPayloadEq);
+    % Descramble
+    rxDescram = descr(rxData);
+    % Viterbi decode the demodulated data
+    dataHard = vitdec(rxDescram,trellis,tbl,'cont','hard');
+    % Removing coding delay
+    rxData = dataHard(tbl+1:end);
+    
     %% Evaluate errors
-    %rxData = step(hPSKDemod, rxPayloadEq);
+    plot(cumsum(txData(1:end-tbl)~=rxData));xlabel('Samples');ylabel('Total Errors');
     %[~, BEREq] = biterr(txData, rxData);
     %yErrEq = nan(nPayload, 1);
     %yErrEq(rxData ~= txData) = rxPayloadEq(rxData ~= txData);
-    
-    %BERvect(block) = BEREq;
+    BEREq = mean(txData(1:end-tbl)~=rxData);
+    fprintf('Incorrect bits %d\n',sum(txData(1:end-tbl)~=rxData));
+    BERvect(block) = BEREq;
 end
 avgBER3 = mean(BERvect);
-disp(avgBER3)
+disp(['Means BER: ',num2str(avgBER3)]);
 
