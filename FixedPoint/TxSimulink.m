@@ -91,8 +91,10 @@ hTxFilt = comm.RaisedCosineTransmitFilter( ...
 fullFrame = hTxFilt(fullFrame);
 %% Radio
 % Setup radios
-centerFreq = 900e6;
-tx=sdrtx('Pluto','RadioID','usb:0');
+%centerFreq = 900e6;
+centerFreq = 2.4e9;
+%tx=sdrtx('Pluto','RadioID','usb:0');
+tx=sdrtx('ZC706 and FMCOMMS2/3/4','BasebandSampleRate',1e6);
 tx.CenterFrequency = centerFreq;
 tx.transmitRepeat(fullFrame);
 
