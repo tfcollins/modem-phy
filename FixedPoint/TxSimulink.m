@@ -21,8 +21,8 @@ DFETraining = pnseq();
 M = 4;
 nPayloadSymbols  = 8*200;  % Number of payload symbols (QPSK and 1/2 rate coding==bits)
 rate = 1/2;
-%txData = randi([0 1], nPayloadSymbols*log2(M)*rate, 1);
-txData = repmat([0;1], nPayloadSymbols*log2(M)*rate/2, 1); % Repeating [0 1]
+txData = randi([0 1], nPayloadSymbols*log2(M)*rate, 1);
+%txData = repmat([0;1], nPayloadSymbols*log2(M)*rate/2, 1); % Repeating [0 1]
 
 % Add end sequence to check at receiver
 xTailData = repmat([1 0 1 1 0 0 1 1 1 1].',4,1);
@@ -69,12 +69,19 @@ hTxFilt = comm.RaisedCosineTransmitFilter( ...
     'FilterSpanInSymbols',chanFilterSpan, ...
     'OutputSamplesPerSymbol',sampPerSymChan);
 
-fullFrameFilt = hTxFilt([fullFrame;fullFrame;fullFrame]);
+fullFrameFilt = hTxFilt([fullFrame]);
+
+%% Save to mat files
+words16bits = bi2de(reshape(txData,16,length(txData)/16).','right-msb');
+save('words16bits.mat','words16bits');
+save('IQData.mat','fullFrameFilt');
+
+
 %% Radio
 % Setup radios
-centerFreq = 2.4e9;
-tx=sdrtx('Pluto', 'RadioID', 'usb:0', 'BasebandSampleRate', 1e6);
+%centerFreq = 2.4e9;
+%tx=sdrtx('Pluto', 'RadioID', 'usb:0', 'BasebandSampleRate', 1e6);
 %tx=sdrtx('ZC706 and FMCOMMS2/3/4', 'BasebandSampleRate', 20e6);
-tx.CenterFrequency = centerFreq;
-tx.transmitRepeat(fullFrameFilt);
+%tx.CenterFrequency = centerFreq;
+%tx.transmitRepeat(fullFrameFilt);
 
