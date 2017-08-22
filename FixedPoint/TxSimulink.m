@@ -72,7 +72,8 @@ hTxFilt = comm.RaisedCosineTransmitFilter( ...
 fullFrameFilt = hTxFilt([fullFrame]);
 
 %% Save to mat files
-words16bits = bi2de(reshape([HeaderData;txData],16,length([HeaderData;txData])/16).','right-msb');
+HeaderBytes = bitget(nPayloadSymbols/8,1:HeaderLen).';
+words16bits = bi2de(reshape([HeaderBytes;txData],16,length([HeaderBytes;txData])/16).','right-msb');
 save('words16bits.mat','words16bits');
 save('IQData.mat','fullFrameFilt');
 
