@@ -21,8 +21,10 @@ DFETraining = pnseq();
 M = 4;
 nPayloadSymbols  = 8*200;  % Number of payload symbols (QPSK and 1/2 rate coding==bits)
 rate = 1/2;
-txData = randi([0 1], nPayloadSymbols*log2(M)*rate, 1);
-%txData = repmat([0;1], nPayloadSymbols*log2(M)*rate/2, 1); % Repeating [0 1]
+%txData = randi([0 1], nPayloadSymbols*log2(M)*rate, 1);
+txData = repmat([0;1], nPayloadSymbols*log2(M)*rate/2, 1); % Repeating [0 1]
+txData(1:64) = zeros(64,1);
+txData(end-63:end) = ones(64,1);
 
 % Add end sequence to check at receiver
 xTailData = repmat([1 0 1 1 0 0 1 1 1 1].',4,1);
@@ -31,6 +33,7 @@ tbl = 34;
 lagBits = randi([0 1],1*tbl/rate,1);
 crc = comm.CRCGenerator('Polynomial','z^32 + z^26 + z^23 + z^22 + z^16 + z^12 + z^11 + z^10 + z^8 + z^7 + z^5 + z^4 + z^2 + z + 1');
 frame = [crc(txData); xTailData; lagBits];
+%frame = [crc(txData)];
 disp(length([crc(txData); xTailData]));
 
 % Convolutionally encode the data
@@ -46,6 +49,7 @@ txDataScram = scr(txDataEnc);
 %% Header
 HeaderLen = 16; % Bits
 PayloadCodedLen = (length(frame)+0)/rate;
+%PayloadCodedLen = 3480;
 HeaderData = bitget(PayloadCodedLen,1:HeaderLen).';
 
 % Repeatatively encode bits
@@ -74,7 +78,10 @@ fullFrameFilt = hTxFilt([fullFrame]);
 %% Save to mat files
 HeaderBytes = bitget(nPayloadSymbols/8,1:HeaderLen).';
 words16bits = bi2de(reshape([HeaderBytes;txData],16,length([HeaderBytes;txData])/16).','right-msb');
+HeaderBytes = bitget(nPayloadSymbols/8,1:64).';
+words64bits = bi2de(reshape([HeaderBytes;txData],64,length([HeaderBytes;txData])/64).','right-msb');
 save('words16bits.mat','words16bits');
+save('words64bits.mat','words64bits');
 save('IQData.mat','fullFrameFilt');
 
 
