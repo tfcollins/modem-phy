@@ -14,13 +14,13 @@ classdef (Abstract) ReceiverModelTests < matlab.unittest.TestCase
         FPSimulinkReceiverModelName = 'Receiver_UnderTest_Float';
         FramesToReceive = 4;
         ScopesToDisable = {'Constellation','Scope','Spectrum'};
-        EnableVisuals = true;
+        EnableVisuals = false;
         HardwareCheck = false;
     end
     
     properties (Constant)
-       RadioDefaultRXGainConfig=struct('Gain',20,'Mode','AGC Slow Attack'); 
-       RadioDefaultTXGain = -30; 
+        RadioDefaultRXGainConfig=struct('Gain',20,'Mode','AGC Slow Attack');
+        RadioDefaultTXGain = -30;
     end
     
     properties (Access = private)
@@ -111,7 +111,7 @@ classdef (Abstract) ReceiverModelTests < matlab.unittest.TestCase
             stopTime = length(RxIQ)*1.1/testCase.SampleRate;
             set_param(modelname,'StopTime',num2str(stopTime))
             % Run receiver
-            simOut = sim(modelname);
+            sim(modelname);
             close_system(modelname, false);
             % Pack results
             results = struct('packetsFound',packetsFound.Data(end),...
@@ -172,7 +172,7 @@ classdef (Abstract) ReceiverModelTests < matlab.unittest.TestCase
             pause(1); % Let transmitter startup
             rx(); % Let AGC settle
             RxIQ_many_offset = rx();
-            clear tx rx; 
+            clear tx rx;
         end
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -192,11 +192,12 @@ classdef (Abstract) ReceiverModelTests < matlab.unittest.TestCase
                 elseif strcmp(source,'simulation')
                     %RxIQ_many = repmat(RxIQ,testCase.FramesToReceive,1);
                     if isfixed
-                        RxIQ_many = testCase.ScaleInput(RxIQ);
+                        RxIQ = testCase.ScaleInput(RxIQ);
                     end
                 end
                 % Run and check receiver
-                testCase.runSpecificReceiver(RxIQ_many,sink);
+                log(testCase,2,sprintf('Testing %s with interpacket gap %d',sink,gap));
+                testCase.runSpecificReceiver(RxIQ,sink);
             end
         end
         %% Test receiver with different sample rates
@@ -213,6 +214,7 @@ classdef (Abstract) ReceiverModelTests < matlab.unittest.TestCase
                     % Nothing here
                 end
                 % Run and check receiver
+                log(testCase,2,sprintf('Testing %s at sample rate %d',sink,gap));
                 testCase.runSpecificReceiver(RxIQ,sink);
             end
         end
@@ -237,6 +239,7 @@ classdef (Abstract) ReceiverModelTests < matlab.unittest.TestCase
                     end
                 end
                 % Run and check receiver
+                log(testCase,2,sprintf('Testing %s with frequency offset %d (Normalized)',sink,offset/testCase.SampleRate));
                 testCase.runSpecificReceiver(RxIQ_many_offset,sink);
             end
         end
@@ -251,13 +254,13 @@ classdef (Abstract) ReceiverModelTests < matlab.unittest.TestCase
                 if strcmp(source,'radio')
                     RxIQ_many_offset = testCase.passThroughRadio(RxIQ,isfixed, RXGainConfig, TXGain);
                 elseif strcmp(source,'simulation')
-                    %RxIQ_many = repmat(RxIQ,testCase.FramesToReceive,1);
                     RxIQ_many_gains = RxIQ.*RXGainConfig.Gain.*TXGain;
                     if isfixed
                         RxIQ_many_offset = testCase.ScaleInput(RxIQ_many_gains);
                     end
                 end
                 % Run and check receiver
+                log(testCase,2,sprintf('Testing %s with TX Gain %d and RX Gain',sink,gap,TXGain,RXGainConfig.Gain));
                 testCase.runSpecificReceiver(RxIQ_many_offset,sink);
             end
         end

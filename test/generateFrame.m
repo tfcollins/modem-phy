@@ -75,7 +75,7 @@ HeaderDataPad = reshape([HeaderData HeaderData].',1,HeaderLen*2).';
 padData = randi([0 3],gapLen,1);
 
 %% Start pad
-padDataStartEnd = randi([0 3],1e3,1);
+padDataStartEnd = randi([0 3],1e4,1);
 
 %% Modulate
 qBits = comm.QPSKModulator('BitInput',true,'SymbolMapping','Binary');
