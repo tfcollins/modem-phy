@@ -37,7 +37,11 @@ classdef (Abstract) ReceiverModelTests < matlab.unittest.TestCase
         end
         
         function findRadio(testCase)
-            r = findPlutoRadio;
+            try
+                r = findPlutoRadio;
+            catch
+                r = [];
+            end
             if isempty(r) && testCase.HardwareCheck
                 error('No radio attached');
             end
