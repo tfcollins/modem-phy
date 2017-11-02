@@ -27,13 +27,13 @@ classdef (TestTags = {'MATLAB','Float'})  matlab_tests < ReceiverModelTests
         end
     end
     %%
-    methods (Test, TestTags = {'Performance','Simulation'})
-        function testSampleRateSimulationFloatingPointSim(testCase)
-            transmitter = 'simulation';
-            receiver = 'FloatingPointMATLAB';
-            rates = [1, 5, 10, 20].*1e6;
-            testCase.testSampleRates(transmitter, receiver, rates);
-        end
-    end
+    %methods (Test, TestTags = {'Performance','Simulation'})
+        %function testSampleRateSimulationFloatingPointSim(testCase)
+        %    transmitter = 'simulation';
+        %    receiver = 'FloatingPointMATLAB';
+        %    rates = [1, 5, 10, 20].*1e6;
+        %    testCase.testSampleRates(transmitter, receiver, rates);
+        %end
+    %end
     
 end
