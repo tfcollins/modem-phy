@@ -6,7 +6,7 @@ import matlab.unittest.plugins.TestRunProgressPlugin
 import matlab.unittest.plugins.LoggingPlugin
 
 %% Pick Tags
-Tags = {'Simulation','Simulink','Fixed','Environmental'};
+Tags = {'Simulation'};
 sm = TestSuite.fromClass(?matlab_tests);
 ss = TestSuite.fromClass(?simulink_tests);
 if ~isempty(Tags)
