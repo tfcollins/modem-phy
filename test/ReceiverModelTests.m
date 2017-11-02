@@ -109,14 +109,16 @@ classdef (Abstract) ReceiverModelTests < matlab.unittest.TestCase
             end
             %CloseAllScopes(modelname);
             set_param([modelname,'/Baseband File Reader'],...
-                'SamplesPerFrame',num2str(length(RxIQ)));
-            set_param([modelname,'/Baseband File Reader'],...
                 'Filename','example.bb');
+            set_param([modelname,'/Baseband File Reader'],...
+                'SamplesPerFrame',num2str(length(RxIQ)));
             stopTime = length(RxIQ)*1.1/testCase.SampleRate;
             set_param(modelname,'StopTime',num2str(stopTime))
             % Run receiver
             sim(modelname);
+            % Close simulink
             close_system(modelname, false);
+            bdclose('all');
             % Pack results
             results = struct('packetsFound',packetsFound.Data(end),...
                 'crcChecks',crcChecks.Data(:,:,end),'failures',failures.Data(:,:,end));
