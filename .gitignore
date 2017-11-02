@@ -1,0 +1,6 @@
+*.m~
+*.mexa64
+hdl_prj/*
+slprj/*
+example.bb
+
