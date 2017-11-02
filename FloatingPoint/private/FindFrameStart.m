@@ -5,7 +5,6 @@ preambleLength = length(xPreamble);
 % Estimate start of frame
 eng = mean(abs(signal).^2); % Mean power
 cor = abs(filter(xPreamble(end:-1:1).',1,signal));
-stem(cor);
 % look in first half only
 cor = cor(1:floor(length(cor)/2));
 [val,ind] = max(cor);
