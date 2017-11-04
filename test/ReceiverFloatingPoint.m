@@ -68,7 +68,7 @@ hRxFilt = comm.RaisedCosineReceiveFilter( ...
     'DecimationFactor',1);
 
 %% CFO Correct
-DampingFactor = 0.9;
+DampingFactor = 1.5;
 NormalizedLoopBandwidth =  0.1;
 csync = comm.CarrierSynchronizer( ...
     'DampingFactor', DampingFactor, ...
@@ -120,7 +120,7 @@ rmsEVMs = [];
 maxEVMs = [];
 processedSamples = 1;
 while processedSamples<length(rxSampFC)
-    
+    log(testCase,4,sprintf('Sample index %d of %d',processedSamples,length(rxSampFC)));
     % Choose data indexes
     if processedSamples+maxFrameLength<length(rxSampFC)
         indx = processedSamples:processedSamples+maxFrameLength-1;
@@ -129,11 +129,12 @@ while processedSamples<length(rxSampFC)
     end
     
     % Locate start of frame
-    frame = FindFrameStart(testCase, rxSampFC(indx), xPreamble);
+    [frame, findx] = FindFrameStart(testCase, rxSampFC(indx), xPreamble);
     if isempty(frame)
         processedSamples = indx(end);
         continue;
     else
+        processedSamples = processedSamples + findx;
         packetsFound = packetsFound + 1;
     end
     
@@ -147,6 +148,14 @@ while processedSamples<length(rxSampFC)
         rxPayloadEq = rxTrainPayloadSym((chanFilterDelay + nTrain + 1):end);
     else
         rxPayloadEq = frame((length(xPreamble)*1 + nTrain + 1):end); %#ok<UNRCH>
+    end
+    
+    if length(rxPayloadEq)<HeaderLen*2
+        % Not enough data remaining to process a full frame
+        packetsFound = double(uint64(packetsFound - 1)); % remove last frame
+        results = struct('packetsFound',packetsFound,...
+            'crcChecks',crcChecks,'failures',failures);
+        return
     end
     
     %% Visualize constellations
@@ -164,20 +173,20 @@ while processedSamples<length(rxSampFC)
     % Decode header and extract payload
     payloadLenA = bi2de(rxData(1:2:HeaderLen*2).');
     payloadLenB = bi2de(rxData(2:2:HeaderLen*2).');
-    if payloadLenA~=payloadLenB
-        log(testCase,4,['Header not decoded correctly: ',num2str(payloadLenA),' ',num2str(payloadLenB)]);
+    if (payloadLenA~=payloadLenB) || (payloadLenA==0)
+        log(testCase,4,['Header not decoded correctly (possible misdetection): ',num2str(payloadLenA),' ',num2str(payloadLenB)]);
         processedSamples = processedSamples + (chanFilterDelay + nTrain + 1);
         % Set result
-        crcChecks = [crcChecks,1];
-        failures = [failures,2];
+        failures = [failures;2];
         continue;
     else
         log(testCase,4,['Correct Packet Decoded With Length: ',num2str(payloadLenA)]);
-        processedSamples = processedSamples + 1/2*(HeaderLen*2+payloadLenA+tbl/rate);
+        %processedSamples = processedSamples + 1/2*(HeaderLen*2+payloadLenA+tbl/rate);
+        processedSamples = processedSamples + round(1/10*(HeaderLen*2+payloadLenA+tbl/rate));
     end
     if (HeaderLen*2+payloadLenA+tbl/rate)<=length(rxData)
         rxData = rxData(HeaderLen*2+1:HeaderLen*2+payloadLenA+tbl/rate);
-    else
+    else % no data left
         packetsFound = double(uint64(packetsFound - 1));
         results = struct('packetsFound',packetsFound,...
             'crcChecks',crcChecks,'failures',failures);
@@ -202,11 +211,11 @@ while processedSamples<length(rxSampFC)
     [rxData,e] = crcDec(rxDataWithCRC);
     if e
         log(testCase,2,'CRC Failed.');
-        crcChecks = [crcChecks,1];
+        crcChecks = [crcChecks;1];
         failures = [failures;4];
     else
         log(testCase,2,'CRC Passed.');
-        crcChecks = [crcChecks,0];
+        crcChecks = [crcChecks;0];
         failures = [failures;0]; %#ok<*AGROW>
         packetBits = {packetBits;rxData};
     end
@@ -234,22 +243,35 @@ function [frame,ind] = FindFrameStart(testCase, signal, xPreamble)
 
 preambleLength = length(xPreamble);
 samples = length(signal);
+threshold = 25;
 
 % Estimate start of frame
 eng = mean(abs(signal).^2); % Mean power
 cor = abs(filter(xPreamble(end:-1:1).',1,signal));
+%eng= abs(filter(ones(size(xPreamble)),1,signal));
 
-% look in first half only
-cor = cor(1:floor(length(cor)/2));
-%cor = (cor./eng)>16;
-[val,ind] = max(cor);
-%stem(cor);
+% Remove wrong positions
+cor(1:preambleLength) = 0;
+
+%cor = cor./eng;
+stem(cor);
+ind = find(cor./eng >= threshold, 1, 'first');
+stem(cor./eng);
+% % look in first half only
+% cor = cor(1:floor(length(cor)/2));
+% stem(cor);
+% cor = (cor./eng);
+% cor = cor>(max(cor)*0.9);
+% [~,ind] = find(cor==1);
+% %[val,ind] = max(cor);
+% stem(cor);
 
 %ind = find(cor);
 
 % The max should be at least X times the mean
 %if ~isempty(ind) %(Larger makes more selective)    
-if (val/eng)>20 %(Larger makes more selective)    
+%if (val/eng)>12 %(Larger makes more selective)    
+if sum(ind)>0
     % Correct to edge of preamble
     ind = ind(1) - preambleLength;
     if ind<0

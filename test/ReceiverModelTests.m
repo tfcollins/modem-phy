@@ -16,6 +16,7 @@ classdef (Abstract) ReceiverModelTests < matlab.unittest.TestCase
         ScopesToDisable = {'Constellation','Scope','Spectrum'};
         EnableVisuals = false;
         HardwareCheck = false;
+        SimChannelSNR = 25;
     end
     
     properties (Constant)
@@ -38,6 +39,7 @@ classdef (Abstract) ReceiverModelTests < matlab.unittest.TestCase
         
         function findRadio(testCase)
             try
+                d1 = sdrdev('Pluto'); setupSession(d1);
                 r = findPlutoRadio;
             catch
                 r = [];
@@ -81,7 +83,7 @@ classdef (Abstract) ReceiverModelTests < matlab.unittest.TestCase
             % Check results
             testCase.assertGreaterThanOrEqual(results.packetsFound,....
                 testCase.FramesToReceive);
-            for i = 1:results.packetsFound
+            for i = 1:testCase.FramesToReceive%results.packetsFound
                 testCase.assertEqual(results.crcChecks(i),0,'CRC Failed in packet');
             end
         end
@@ -108,6 +110,8 @@ classdef (Abstract) ReceiverModelTests < matlab.unittest.TestCase
                 testCase.DisableScopes(modelname,testCase.ScopesToDisable);
             end
             %CloseAllScopes(modelname);
+            set_param([modelname,'/Baseband File Reader'],...
+                'InheritSampleTimeFromFile',1);
             set_param([modelname,'/Baseband File Reader'],...
                 'Filename','example.bb');
             set_param([modelname,'/Baseband File Reader'],...
@@ -146,7 +150,7 @@ classdef (Abstract) ReceiverModelTests < matlab.unittest.TestCase
             end
         end
         % Loop through receiver
-        function RxIQ_many_offset = passThroughRadio(testCase,RxIQ,isfixed,RXGainConfig,TXGain)
+        function RxIQ_many_offset = passThroughRadio(testCase,RxIQ,isfixed,RXGainConfig,TXGain,freqOffset)
             if isfixed
                 odt = 'int16';
             else
@@ -159,10 +163,10 @@ classdef (Abstract) ReceiverModelTests < matlab.unittest.TestCase
                 Gain = TXGain;
             end
             tx = sdrtx('Pluto','BasebandSampleRate',testCase.SampleRate,...
-                'CenterFrequency',testCase.CenterFrequency,...
+                'CenterFrequency',testCase.CenterFrequency+freqOffset,...
                 'Gain',Gain);
             % RX
-            if isempty(RXGain)
+            if isempty(RXGainConfig)
                 Gain = testCase.RadioDefaultRXGainConfig.Gain;
                 GainMode = testCase.RadioDefaultRXGainConfig.Mode;
             else
@@ -172,11 +176,11 @@ classdef (Abstract) ReceiverModelTests < matlab.unittest.TestCase
             rx = sdrrx('Pluto','BasebandSampleRate',testCase.SampleRate,...
                 'CenterFrequency',testCase.CenterFrequency,...
                 'OutputDataType',odt,...
-                'SamplesPerFrame',(length(RxIQ)*(testCase.FramesToReceive+1)),...
+                'SamplesPerFrame',ceil(length(RxIQ)*(testCase.FramesToReceive+2)/testCase.FramesToReceive),...
                 'GainSource', GainMode,'Gain',Gain);
             tx.transmitRepeat(RxIQ);
             pause(1); % Let transmitter startup
-            rx(); % Let AGC settle
+            rx();rx();rx(); % Let AGC settle
             RxIQ_many_offset = rx();
             clear tx rx;
         end
@@ -196,9 +200,13 @@ classdef (Abstract) ReceiverModelTests < matlab.unittest.TestCase
                 if strcmp(source,'radio')
                     error('Not yet implemented');
                 elseif strcmp(source,'simulation')
-                    %RxIQ_many = repmat(RxIQ,testCase.FramesToReceive,1);
                     if isfixed
+                        RxIQ = awgn(RxIQ,testCase.SimChannelSNR,'measured');
                         RxIQ = testCase.ScaleInput(RxIQ);
+                    else
+                        %RxIQ_many = repmat(RxIQ,testCase.FramesToReceive,1);
+                        RxIQ = awgn(0.7.*RxIQ,testCase.SimChannelSNR,'measured');
+                        %RxIQ = awgn(RxIQ,testCase.SimChannelSNR,'measured');
                     end
                 end
                 % Run and check receiver
@@ -225,23 +233,37 @@ classdef (Abstract) ReceiverModelTests < matlab.unittest.TestCase
             end
         end
         %% Test receiver with different frequency offsets
-        function testPacketFrequencyOffset(testCase, source, sink, offsets)
+        function testPacketFrequencyOffset(testCase, source, sink, offsets, GainRXConfig, GainTX)
             pfo = comm.PhaseFrequencyOffset(...
                 'SampleRate',testCase.SampleRate);
-            % Generate source data
+            if nargin<5
+                GainRXConfig = []; GainTX = [];
+            elseif nargin<6
+                GainTX = [];
+            end
             for offset = offsets
-                % Generate data
-                RxIQ = generateFrame('Packets',testCase.FramesToReceive);
-                % Apply to source
-                isfixed = contains(lower(sink),'fixed');
                 if strcmp(source,'radio')
-                    RxIQ_many_offset = testCase.passThroughRadio(RxIQ,isfixed);
+                    % Generate data
+                    RxIQ = generateFrame('Packets',testCase.FramesToReceive,'EndsGap',0);
+                    % Apply to source
+                    isfixed = contains(lower(sink),'fixed');
+                    RxIQ_many_offset = testCase.passThroughRadio(RxIQ,isfixed,GainRXConfig,GainTX,offset);
                 elseif strcmp(source,'simulation')
-                    pfo.release();
-                    pfo.FrequencyOffset = offset;
-                    RxIQ_many_offset = pfo(RxIQ);
+                    % Generate data
+                    isfixed = contains(lower(sink),'fixed');
                     if isfixed
+                        RxIQ = generateFrame('Packets',testCase.FramesToReceive);                    % Apply to source
+                        pfo.release();
+                        pfo.FrequencyOffset = offset;
+                        RxIQ_many_offset = pfo(RxIQ);
+                        RxIQ_many_offset = awgn(RxIQ_many_offset,testCase.SimChannelSNR,'measured');
                         RxIQ_many_offset = testCase.ScaleInput(RxIQ_many_offset);
+                    else
+                        RxIQ = 0.7.*generateFrame('Packets',testCase.FramesToReceive);                    % Apply to source
+                        pfo.release();
+                        pfo.FrequencyOffset = offset;
+                        RxIQ_many_offset = pfo(RxIQ);
+                        RxIQ_many_offset = awgn(RxIQ_many_offset,testCase.SimChannelSNR,'measured');
                     end
                 end
                 % Run and check receiver
@@ -250,23 +272,24 @@ classdef (Abstract) ReceiverModelTests < matlab.unittest.TestCase
             end
         end
         %% Test receiver with different gains (simulates distance and exercises AGC)
-        function testPacketGainDifference(testCase, source, sink, RXGainConfig, TXGain)
+        function testPacketGainDifference(testCase, source, sink, RXGainConfig, TXGains)
             % Generate source data
-            for offset = offsets
+            for TXGain = TXGains
                 % Generate data
-                RxIQ = generateFrame('Packets',testCase.FramesToReceive);
                 % Apply to source
                 isfixed = contains(lower(sink),'fixed');
                 if strcmp(source,'radio')
-                    RxIQ_many_offset = testCase.passThroughRadio(RxIQ,isfixed, RXGainConfig, TXGain);
+                    RxIQ = generateFrame('Packets',testCase.FramesToReceive,'EndsGap',0);
+                    RxIQ_many_offset = testCase.passThroughRadio(RxIQ,isfixed, RXGainConfig, TXGain,0);
                 elseif strcmp(source,'simulation')
+                    RxIQ = generateFrame('Packets',testCase.FramesToReceive);
                     RxIQ_many_gains = RxIQ.*RXGainConfig.Gain.*TXGain;
                     if isfixed
                         RxIQ_many_offset = testCase.ScaleInput(RxIQ_many_gains);
                     end
                 end
                 % Run and check receiver
-                log(testCase,2,sprintf('Testing %s with TX Gain %d and RX Gain',sink,gap,TXGain,RXGainConfig.Gain));
+                log(testCase,2,sprintf('Testing %s with TX Gain %d',sink,TXGain));
                 testCase.runSpecificReceiver(RxIQ_many_offset,sink);
             end
         end

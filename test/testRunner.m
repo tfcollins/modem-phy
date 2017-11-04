@@ -4,9 +4,10 @@ import matlab.unittest.TestSuite;
 import matlab.unittest.selectors.HasTag
 import matlab.unittest.plugins.TestRunProgressPlugin
 import matlab.unittest.plugins.LoggingPlugin
+import matlab.unittest.plugins.DiagnosticsRecordingPlugin;
 
 %% Pick Tags
-Tags = {'Simulation','Simulink','Fixed','Environmental'};
+Tags = {'Simulation'};
 sm = TestSuite.fromClass(?matlab_tests);
 ss = TestSuite.fromClass(?simulink_tests);
 if ~isempty(Tags)
@@ -24,6 +25,7 @@ p = LoggingPlugin.withVerbosity(4);
 runner.addPlugin(p);
 p = TestRunProgressPlugin.withVerbosity(4);
 runner.addPlugin(p);
+runner.addPlugin(DiagnosticsRecordingPlugin);
 
 %% Run Tests
 if ~isempty(ver('parallel'))

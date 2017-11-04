@@ -6,7 +6,7 @@ hStream   = RandStream.create('mt19937ar', 'seed', 12345);
 Rsym      = 1e6;  % Symbol rate (Hz)
 nAGCTrain = 100;  % Number of training symbols
 nTrain    = 250;  % Number of training symbols
-nPayload  = 64*100;  % Number of payload bits
+nPayload  = 8*1400;  % Number of payload bits
 nTail     = 40+68;  % Number of tail symbols (enough to flush filters and handle viterbi lag)
 
 %% Frame start marker
@@ -94,6 +94,12 @@ hRxFilt = comm.RaisedCosineReceiveFilter( ...
     'InputSamplesPerSymbol',sampPerSymChan, ...
     'DecimationFactor',1);
 
+hRxFiltPD = comm.RaisedCosineReceiveFilter( ...
+    'RolloffFactor',0.5, ...
+    'FilterSpanInSymbols',chanFilterSpan, ...
+    'InputSamplesPerSymbol',sampPerSymChan, ...
+    'DecimationFactor',sampPerSymChan);
+
 % Calculate the samples per symbol after the receive filter
 sampPerSymPostRx = sampPerSymChan/hRxFilt.DecimationFactor;
 % Calculate the delay in samples from both channel filters
@@ -120,7 +126,7 @@ vd = dsp.VariableFractionalDelay;
 
 %% Channel
 channel = 'radio';
-FrequencyOffset = 0;
+FrequencyOffset = 400;
 
 switch channel
     case 'qpsk'
@@ -194,14 +200,12 @@ eqDelayInSym = (eqObj.RefTap-1)/sampPerSymPostRx;
 
 %% Visuals
 constd = comm.ConstellationDiagram('SamplesPerSymbol', 1,...
-    'Name','constd','ReferenceConstellation',PSKConstellation,...
-    'MeasurementInterval',1024);
+    'Name','constd','ReferenceConstellation',PSKConstellation);
 constd2 = comm.ConstellationDiagram('SamplesPerSymbol', 1,...
-    'Name','constd2','ReferenceConstellation',PSKConstellation,...
-    'MeasurementInterval',1024);
+    'Name','constd2','ReferenceConstellation',PSKConstellation);
 
 %% Simulation
-nBlocks = 1;  % Number of transmission blocks in simulation
+nBlocks = 5;  % Number of transmission blocks in simulation
 BERvect = zeros(nBlocks,1);
 for block = 1:nBlocks
     % Generate data
@@ -226,9 +230,11 @@ for block = 1:nBlocks
             txSigDelayed = [zeros(100*4,1);txSig];
             rxSig = qpskChan(txSigDelayed,block);
         case 'radio'
+            tx.release();rx.release();
+%            tx = sdrtx('Pluto','Gain',tx.Gain);
             tx.transmitRepeat(txSig);
             %tx(txSig);
-            for i=1:3
+            for i=1:3 % Settle AGC
                 rxSig = rx();
             end
         case 'basic'
@@ -261,7 +267,7 @@ for block = 1:nBlocks
         % samples, accounting for filter delay and equalizer delay.
         rxTrainPlusPayload = frame;
         chanFilterDelay = length(xPreamble)*1;
-        rxTrainPayloadSym = dfe_frac(frame, xTrain, 7, 3, 1, PSKConstellation, chanFilterDelay);
+        rxTrainPayloadSym = dfe_frac(frame, xTrain, 7, 3, 1, PSKConstellation, chanFilterDelay, 4);
         %[rxTrainPayloadSym, ~, err] = equalize(eqObj, rxTrainPayloadSamp, xTrain);
         % Extract and evaluate payload
         %rxPayloadEq = rxTrainPayloadSym(chanFilterDelay + nTrain + (1:nPayload));
@@ -271,7 +277,8 @@ for block = 1:nBlocks
     end
     
     %% Visualize constellations
-    inds = constd.MeasurementInterval;
+    %inds = constd.MeasurementInterval;
+    inds = 1024;
     for k=1:inds:length(rxPayloadEq)-inds
         constd(rxSig(k:k+inds-1));
         constd2(rxPayloadEq(k:k+inds-1));
@@ -286,9 +293,12 @@ for block = 1:nBlocks
     if payloadLenA~=payloadLenB
         disp('Header not decoded correctly')
         disp(payloadLenA); disp(payloadLenB);
-        break
+        continue
+    else
+        fprintf('Packet Length: %d (Expected %d)\n',payloadLenA,PayloadCodedLen);
     end
     rxData = rxData(33:32+payloadLenA+tbl/rate);
+    %rxData = [txDataScram;randi([0 1],2*length(xTail)+tbl/rate,1)];
     % Descramble
     rxDescram = descr(rxData);
     % Viterbi decode the demodulated data
