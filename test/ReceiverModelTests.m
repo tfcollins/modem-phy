@@ -113,6 +113,7 @@ classdef (Abstract) ReceiverModelTests < matlab.unittest.TestCase
             % Run receiver
             sim(modelname);
             close_system(modelname, false);
+            delete('example.bb');
             % Pack results
             results = struct('packetsFound',packetsFound.Data(end),...
                 'crcChecks',crcChecks.Data(:,:,end),'failures',failures.Data(:,:,end));
@@ -263,6 +264,33 @@ classdef (Abstract) ReceiverModelTests < matlab.unittest.TestCase
                 log(testCase,2,sprintf('Testing %s with TX Gain %d and RX Gain',sink,gap,TXGain,RXGainConfig.Gain));
                 testCase.runSpecificReceiver(RxIQ_many_offset,sink);
             end
+        end
+        %% Test receiver with different gains (simulates distance and exercises AGC)
+        function testPacketMultipleSizes(testCase, source, sink, sizes)
+            % Generate source data
+            RxIQ = [];
+            for i = 1:length(sizes)
+                % Generate data
+                if i==1
+                    RxIQ = [RxIQ; generateFrame('PayloadBytes',sizes(i),'StartPadding',1e3,'EndPadding',0)]; %#ok<AGROW>
+                elseif i==length(sizes)
+                    RxIQ = [RxIQ; generateFrame('PayloadBytes',sizes(i),'StartPadding',0,'EndPadding',1e2)]; %#ok<AGROW>
+                else
+                    RxIQ = [RxIQ; generateFrame('PayloadBytes',sizes(i),'StartPadding',0,'EndPadding',0)]; %#ok<AGROW>
+                end
+            end
+            % Apply to source
+            isfixed = contains(lower(sink),'fixed');
+            if strcmp(source,'radio')
+                RxIQ = testCase.passThroughRadio(RxIQ,isfixed, RXGainConfig, TXGain);
+            elseif strcmp(source,'simulation')
+                if isfixed
+                    RxIQ = testCase.ScaleInput(RxIQ);
+                end
+            end
+            % Run and check receiver
+            log(testCase,2,sprintf('Testing %s with %d different packet sizes together',sink,int32(length(sizes))));
+            testCase.runSpecificReceiver(RxIQ,sink);
         end
         
     end

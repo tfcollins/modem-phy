@@ -1,23 +1,31 @@
 function [fullFrameFilt,txData] = generateFrame(varargin)
 
+rng(30);
+
 % Set defaults
 gapLen = 0;
 nPayloadSymbols = 8*200; % payload bits
 numPackets = 1;
+startPad = 1e4;
+endPad = 1e3;
 % Set user options
 if nargin>0
-for i=1:2:length(varargin)
-    switch varargin{i}
-        case 'Gap'
-            gapLen = varargin{i+1};
-        case 'PayloadBytes'
-            nPayloadSymbols = varargin{i+1}; %#ok<*NASGU>
-        case 'Packets'
-            numPackets = varargin{i+1};
-        otherwise
-            error('Unknown PV pair');
+    for i=1:2:length(varargin)
+        switch varargin{i}
+            case 'Gap'
+                gapLen = varargin{i+1};
+            case 'PayloadBytes'
+                nPayloadSymbols = varargin{i+1}; %#ok<*NASGU>
+            case 'Packets'
+                numPackets = varargin{i+1};
+            case 'StartPadding'
+                startPad = varargin{i+1};
+            case 'EndPadding'
+                endPad = varargin{i+1};
+            otherwise
+                error('Unknown PV pair');
+        end
     end
-end
 end
 
 %% Generate data for transmission
@@ -40,7 +48,7 @@ DFETraining = pnseq();
 
 %% Payload
 M = 4;
-nPayloadSymbols  = 8*200;  % Number of payload symbols (QPSK and 1/2 rate coding==bits)
+%nPayloadSymbols  = 8*200;  % Number of payload symbols (QPSK and 1/2 rate coding==bits)
 rate = 1/2;
 %txData = randi([0 1], nPayloadSymbols*log2(M)*rate, 1);
 txData = repmat([0;1], nPayloadSymbols*log2(M)*rate/2, 1); % Repeating [0 1]
@@ -75,7 +83,10 @@ HeaderDataPad = reshape([HeaderData HeaderData].',1,HeaderLen*2).';
 padData = randi([0 3],gapLen,1);
 
 %% Start pad
-padDataStartEnd = randi([0 3],1e4,1);
+padDataStart = randi([0 3],startPad,1);
+
+%% Last packet pad
+padDataEnd = randi([0 3],endPad,1);
 
 %% Modulate
 qBits = comm.QPSKModulator('BitInput',true,'SymbolMapping','Binary');
@@ -88,8 +99,8 @@ fullFrame = [qInts(AGCPreamble);...
     qBits(txDataScram);
     qInts(padData)];
 
-fullFrame = [qInts(padDataStartEnd);repmat(fullFrame,numPackets,1);...
-    qInts(padDataStartEnd)];
+fullFrame = [qInts(padDataStart);repmat(fullFrame,numPackets,1);...
+    qInts(padDataEnd)];
 
 %% Filter
 chanFilterSpan = 8;  % Filter span in symbols
