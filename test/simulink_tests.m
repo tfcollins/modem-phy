@@ -53,6 +53,26 @@ classdef (TestTags = {'Simulink'}) simulink_tests < ReceiverModelTests
             testCase.testPacketGaps(transmitter, receiver, gaps);
         end
     end
+    %% Packet multiple sizes tests
+    methods (Test, TestTags = {'Functional','Simulation','Float','Sizes'})
+        function testPacketSizesSimulationFloatingPointSim(testCase)
+            transmitter = 'simulation';
+            receiver = 'FloatingPointSimulink';
+            %packetSizesBytes = [1000,10,100];
+            packetSizesBits = 64*[1,10,100,10];
+            testCase.testPacketMultipleSizes(transmitter, receiver, packetSizesBits);
+        end
+    end
+    %
+    methods (Test, TestTags = {'Functional','Simulation','Fixed','Sizes'})
+        function testPacketSizesSimulationFixedPointSim(testCase)
+            transmitter = 'simulation';
+            receiver = 'FixedPointSimulink';
+            %packetSizesBytes = [1000,10,100];
+            packetSizesBits = 64*[35,2,37,2];
+            testCase.testPacketMultipleSizes(transmitter, receiver, packetSizesBits);
+        end
+    end
     %% Sample rate tests
     methods (Test, TestTags = {'Performance','Radio','Float'})
         function testSampleRateSimulationFloatingPointSim(testCase)

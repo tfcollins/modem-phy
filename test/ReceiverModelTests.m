@@ -293,6 +293,37 @@ classdef (Abstract) ReceiverModelTests < matlab.unittest.TestCase
                 testCase.runSpecificReceiver(RxIQ_many_offset,sink);
             end
         end
+        %% Test receiver with different gains (simulates distance and exercises AGC)
+        function testPacketMultipleSizes(testCase, source, sink, sizes)
+            % Generate source data
+            RxIQ = [];
+            for i = 1:length(sizes)
+                % Generate data
+                if i==1
+                    RxIQ = [RxIQ; generateFrame('PayloadBytes',sizes(i),'StartPadding',1e3,'EndPadding',0)]; %#ok<AGROW>
+                elseif i==length(sizes)
+                    RxIQ = [RxIQ; generateFrame('PayloadBytes',sizes(i),'StartPadding',0,'EndPadding',1e2)]; %#ok<AGROW>
+                else
+                    RxIQ = [RxIQ; generateFrame('PayloadBytes',sizes(i),'StartPadding',0,'EndPadding',0)]; %#ok<AGROW>
+                end
+            end
+            % Generate data
+            isfixed = contains(lower(sink),'fixed');
+            if strcmp(source,'radio')
+                error('Test should not be run with hardware');
+                %RxIQ = testCase.passThroughRadio(RxIQ,isfixed, RXGainConfig, TXGain);
+            elseif strcmp(source,'simulation')
+                if isfixed
+                    RxIQ = awgn(RxIQ,testCase.SimChannelSNR,'measured');                % Apply to source
+                    RxIQ = testCase.ScaleInput(RxIQ);
+                else
+                    RxIQ = awgn(0.7*RxIQ,testCase.SimChannelSNR,'measured');
+                end
+            end
+            % Run and check receiver
+            log(testCase,2,sprintf('Testing %s with %d different packet sizes together',sink,int32(length(sizes))));
+            testCase.runSpecificReceiver(RxIQ,sink);
+        end
         
     end
     methods (Test)
