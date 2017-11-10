@@ -256,7 +256,7 @@ cor(1:preambleLength) = 0;
 %cor = cor./eng;
 stem(cor);
 ind = find(cor./eng >= threshold, 1, 'first');
-stem(cor./eng);
+%stem(cor./eng);
 % % look in first half only
 % cor = cor(1:floor(length(cor)/2));
 % stem(cor);
