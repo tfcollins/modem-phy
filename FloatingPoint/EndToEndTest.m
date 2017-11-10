@@ -220,8 +220,8 @@ for block = 1:nBlocks
             % Add padding to end
             txSigDelayed = [txSig;zeros(400,1)];
             chOut = fo(txSigDelayed);
-            chanDelay = vd(chOut, 1); % Variable delay
-            rxSig  = hAWGNChan(ad9361Scale.*chanDelay);      % AWGN channel
+            chanDelay = vd(chOut, 2.2); % Variable delay
+            rxSig  = hAWGNChan(ad9361Scale.*chanDelay); % AWGN channel
     end
     % View spectrum
     if enabled,sa(rxSig);end
@@ -233,7 +233,7 @@ for block = 1:nBlocks
     [rxSampFC,phase] = csync(rxSampTC);
     instantaneous_frequency = convertPhaseToFrequency(phase,Rsym,1);
     if enabled
-    plot(instantaneous_frequency);
+    plot(instantaneous_frequency./sampPerSymChan);
     hold on; plot(1.*ones(size(instantaneous_frequency)).*trueOffset,...
         'r');hold off;
     xlabel('Samples');ylabel('Frequency Offset/Estimate');
