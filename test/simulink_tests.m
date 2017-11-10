@@ -31,7 +31,7 @@ classdef (TestTags = {'Simulink'}) simulink_tests < ReceiverModelTests
         function testFrequencyOffsetsFixedPointHW(testCase)
             transmitter = 'radio';
             receiver = 'FixedPointSimulink';
-            frequencies = [0,1e2,1e3];
+            frequencies = [0,1e2,1e3,3e3];
             testCase.testPacketFrequencyOffset(transmitter, receiver, frequencies);
         end
     end
@@ -73,22 +73,22 @@ classdef (TestTags = {'Simulink'}) simulink_tests < ReceiverModelTests
             testCase.testPacketMultipleSizes(transmitter, receiver, packetSizesBits);
         end
     end
-    %% Sample rate tests
-    methods (Test, TestTags = {'Performance','Radio','Float'})
-        function testSampleRateSimulationFloatingPointSim(testCase)
-            transmitter = 'radio';
-            receiver = 'FloatingPointSimulink';
-            rates = [1, 5, 10, 20].*1e6;
-            testCase.testSampleRates(transmitter, receiver, rates);
-        end
-    end
-    %
-    methods (Test, TestTags = {'Performance','Radio','Fixed'})
-        function testSampleRateSimulationFixedPointSim(testCase)
-            transmitter = 'radio';
-            receiver = 'FixedPointSimulink';
-            rates = [1, 5, 10, 20].*1e6;
-            testCase.testSampleRates(transmitter, receiver, rates);
-        end
-    end    
+%     %% Sample rate tests
+%     methods (Test, TestTags = {'Performance','Radio','Float'})
+%         function testSampleRateSimulationFloatingPointSim(testCase)
+%             transmitter = 'radio';
+%             receiver = 'FloatingPointSimulink';
+%             rates = [1, 5, 10, 20].*1e6;
+%             testCase.testSampleRates(transmitter, receiver, rates);
+%         end
+%     end
+%     %
+%     methods (Test, TestTags = {'Performance','Radio','Fixed'})
+%         function testSampleRateSimulationFixedPointSim(testCase)
+%             transmitter = 'radio';
+%             receiver = 'FixedPointSimulink';
+%             rates = [1, 5, 10, 20].*1e6;
+%             testCase.testSampleRates(transmitter, receiver, rates);
+%         end
+%     end    
 end

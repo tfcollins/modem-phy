@@ -83,9 +83,13 @@ classdef (Abstract) ReceiverModelTests < matlab.unittest.TestCase
             % Check results
             testCase.assertGreaterThanOrEqual(results.packetsFound,....
                 testCase.FramesToReceive);
-            for i = 1:testCase.FramesToReceive%results.packetsFound
-                testCase.assertEqual(results.crcChecks(i),0,'CRC Failed in packet');
-            end
+            testCase.assertTrue(sum(...
+                results.crcChecks(1:results.packetsFound)==0) >= ...
+                testCase.FramesToReceive,'CRC Failed in packet');
+%             for i = 1:testCase.FramesToReceive%results.packetsFound
+%                 testCase.assertEqual(results.crcChecks(i),0,'CRC Failed in packet');
+%             end
+%             testCase.assert(sum(results.crcChecks==0),
         end
         % Test MATLAB based receiver
         function testPacketRecoveryMATLAB(testCase,RxIQ,functionName)
