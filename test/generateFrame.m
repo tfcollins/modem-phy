@@ -1,10 +1,11 @@
 function [fullFrameFilt,txData] = generateFrame(varargin)
 
+
 % Set defaults
 gapLen = 0;
-nPayloadSymbols = 8*200; % payload bits
+nPayloadSymbols = 64*25;%8*200; % payload bits
 numPackets = 1;
-padEndStartLen = 2e4;
+padEndStartLen = 1e4;
 startPad = padEndStartLen;
 endPad = padEndStartLen;
 % Set user options
@@ -50,13 +51,15 @@ pnseq = comm.PNSequence('Polynomial', 'z^5 + z^3 + z^1 + 1', ...
 DFETraining = pnseq();
 
 %% Payload
+%rng(121);
+rng(10);
 M = 4;
 %nPayloadSymbols  = 8*200;  % Number of payload symbols (QPSK and 1/2 rate coding==bits)
 rate = 1/2;
-%txData = randi([0 1], nPayloadSymbols*log2(M)*rate, 1);
-txData = repmat([0;1], nPayloadSymbols*log2(M)*rate/2, 1); % Repeating [0 1]
+txData = randi([0 1], nPayloadSymbols*log2(M)*rate, 1);
+%txData = repmat([0;1], nPayloadSymbols*log2(M)*rate/2, 1); % Repeating [0 1]
 
-% Add end sequence to check at receiver
+% (DEBUG ONLY) Add end sequence to check at receiver
 xTailData = repmat([1 0 1 1 0 0 1 1 1 1].',4,1);
 % Add bits to deal with viterbi lag
 tbl = 34;
@@ -119,3 +122,6 @@ hTxFilt = comm.RaisedCosineTransmitFilter( ...
 
 fullFrameFilt = hTxFilt(fullFrame);
 
+% Save bits for debugging
+bits = crc(txData);
+save('bits.mat','bits','frame','txDataEnc');

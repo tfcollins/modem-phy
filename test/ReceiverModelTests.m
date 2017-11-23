@@ -109,6 +109,7 @@ classdef (Abstract) ReceiverModelTests < matlab.unittest.TestCase
             % Cast to fixed if necessary and save data
             bb(RxIQ);
             bb.release();
+            pause(2);
             % Set model parameters
             open(modelname);
             if ~testCase.EnableVisuals

@@ -68,11 +68,14 @@ classdef (TestTags = {'Simulink'}) simulink_tests < ReceiverModelTests
         function testPacketSizesSimulationFixedPointSim(testCase)
             transmitter = 'simulation';
             receiver = 'FixedPointSimulink';
-            %packetSizesBytes = [1000,10,100];
-            packetSizesBits = 64*[35,2,37,2];
+            packetSizesBits = 64*[35,2,37,2,25,26];
+            testCase.FramesToReceive = 6;
             testCase.testPacketMultipleSizes(transmitter, receiver, packetSizesBits);
+            testCase.FramesToReceive = 4;
         end
     end
+
+
 %     %% Sample rate tests
 %     methods (Test, TestTags = {'Performance','Radio','Float'})
 %         function testSampleRateSimulationFloatingPointSim(testCase)

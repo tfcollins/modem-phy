@@ -41,6 +41,17 @@ classdef (TestTags = {'MATLAB','Float'})  matlab_tests < ReceiverModelTests
             testCase.testPacketGainDifference(transmitter, receiver,[] ,TXGains);
         end
     end
+    %
+    methods (Test, TestTags = {'Functional','Simulation','Float','Sizes'})
+        function testPacketSizesSimulationFloatingPointSim(testCase)
+            transmitter = 'simulation';
+            receiver = 'FloatingPointMATLAB';
+            %packetSizesBytes = [1000,10,100];
+            packetSizesBits = 64*[35,2,37,2];
+            %packetSizesBits = 64*[2 2 2 2]+0;
+            testCase.testPacketMultipleSizes(transmitter, receiver, packetSizesBits);
+        end
+    end
     %%
 %     methods (Test, TestTags = {'Performance','Simulation'})
 %         function testSampleRateSimulationFloatingPointSim(testCase)
