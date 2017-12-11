@@ -1,5 +1,5 @@
 
-
+hdlCheck = false;
 models = [...
     struct('folder','FixedPoint','name','combinedTxRx','HDLSubsystem','Combined TX and RX');...
     struct('folder','FixedPoint','name','combinedTxRx_ADIDMA','HDLSubsystem','Combined TX and RX');...
@@ -21,15 +21,16 @@ for m = 1:length(models)
 end
 
 %% Check models to make sure they can generate HDL (without synthesis)
-for m = 1:length(models)
-    if ~strfind(models(m).folder,'Fixed')
-        continue;
+if hdlCheck
+    for m = 1:length(models)
+        if ~strfind(models(m).folder,'Fixed')
+            continue;
+        end
+        cd(models(m).folder)
+        fprintf('Checking model HDL compatibility: %s\n',models(m).name);
+        open_system(models(m).name,'loadonly');
+        makehdl([models(m).name,'/',models(m).HDLSubsystem]);
+        close_system(models(m).name);
+        cd ..
     end
-    cd(models(m).folder)
-    fprintf('Checking model HDL compatibility: %s\n',models(m).name);
-    open_system(models(m).name,'loadonly');
-    makehdl([models(m).name,'/',models(m).HDLSubsystem]);
-    close_system(models(m).name);
-    cd ..
 end
-
