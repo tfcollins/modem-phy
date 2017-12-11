@@ -21,7 +21,7 @@ DFETraining = pnseq();
 
 %% Payload
 M = 4;
-nPayloadSymbols  = 64*20;  % Number of payload symbols (QPSK and 1/2 rate coding==bits)
+nPayloadSymbols  = 64*60;  % Number of payload symbols (QPSK and 1/2 rate coding==bits)
 rate = 1/2;
 txData = repmat([0;1], nPayloadSymbols*log2(M)*rate/2, 1); % Repeating [0 1]
 txData(1:64) = zeros(64,1);
@@ -82,28 +82,28 @@ save('words16bits.mat','words16bits');
 save('words64bits.mat','words64bits');
 save('IQData.mat','fullFrameFilt');
 
-%% Radio
-centerFreq = 2.4e9;
-fs = 1e6;
-type = 'double';
-freqOffset = 500;
-if passthroughradio
-    % Setup radios
-    tx=sdrtx('Pluto', 'RadioID', 'usb:0', 'BasebandSampleRate', fs); %#ok<*UNRCH>
-    %tx=sdrtx('ZC706 and FMCOMMS2/3/4', 'BasebandSampleRate', fs);
-    tx.CenterFrequency = centerFreq;
-    tx.transmitRepeat(fullFrameFilt); pause(1);
-    rx=sdrrx('Pluto', 'RadioID', 'usb:0', 'BasebandSampleRate', fs, 'SamplesPerFrame', length(fullFrameFilt)*3, 'OutputDataType',type);
-    rx.CenterFrequency = centerFreq+freqOffset;
-    for i=1:4,rx();end
-    fullFrameFilt = rx();
-else
-    fullFrameFilt = 0.7.*fullFrameFilt; % Scale data to better model AGC output on AD9361
-end
-
-%% Save to file
-bb = comm.BasebandFileWriter('Filename','IQ.bb');
-bb.CenterFrequency = centerFreq;
-bb.SampleRate = fs;
-bb(fullFrameFilt);
-bb.release();
+% %% Radio
+% centerFreq = 2.4e9;
+% fs = 1e6;
+% type = 'double';
+% freqOffset = 500;
+% if passthroughradio
+%     % Setup radios
+%     tx=sdrtx('Pluto', 'RadioID', 'usb:0', 'BasebandSampleRate', fs); %#ok<*UNRCH>
+%     %tx=sdrtx('ZC706 and FMCOMMS2/3/4', 'BasebandSampleRate', fs);
+%     tx.CenterFrequency = centerFreq;
+%     tx.transmitRepeat(fullFrameFilt); pause(1);
+%     rx=sdrrx('Pluto', 'RadioID', 'usb:0', 'BasebandSampleRate', fs, 'SamplesPerFrame', length(fullFrameFilt)*3, 'OutputDataType',type);
+%     rx.CenterFrequency = centerFreq+freqOffset;
+%     for i=1:4,rx();end
+%     fullFrameFilt = rx();
+% else
+%     fullFrameFilt = 0.7.*fullFrameFilt; % Scale data to better model AGC output on AD9361
+% end
+% 
+% %% Save to file
+% bb = comm.BasebandFileWriter('Filename','IQ.bb');
+% bb.CenterFrequency = centerFreq;
+% bb.SampleRate = fs;
+% bb(fullFrameFilt);
+% bb.release();
