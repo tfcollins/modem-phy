@@ -111,7 +111,8 @@ classdef (Abstract) ReceiverModelTests < matlab.unittest.TestCase
             bb.release();
             pause(2);
             % Set model parameters
-            open(modelname);
+            load_system(modelname);
+            %open(modelname);
             if ~testCase.EnableVisuals
                 testCase.DisableScopes(modelname,testCase.ScopesToDisable);
             end

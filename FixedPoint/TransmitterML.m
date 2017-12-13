@@ -47,7 +47,6 @@ scr  = comm.Scrambler(N, '1 + z^-1 + z^-3 + z^-5+ z^-7',...
     'InitialConditions',[0 1 0 0 0 1 0]);
 txDataScram = scr(txDataEnc);
 
-
 %% Header
 HeaderLen = 16; % Bits
 PayloadCodedLen = (length(frame)+0)/rate;
@@ -57,6 +56,11 @@ HeaderData = bitget(PayloadCodedLen,1:HeaderLen).';
 % Repeatatively encode bits
 HeaderDataPad = reshape([HeaderData HeaderData].',1,HeaderLen*2).';
 
+
+%% Last packet pad
+endPad = 1e3;
+padDataEnd = randi([0 3],endPad,1);
+
 %% Modulate
 qBits = comm.QPSKModulator('BitInput',true,'SymbolMapping','Binary');
 qInts = comm.QPSKModulator('BitInput',false,'SymbolMapping','Binary');
@@ -65,7 +69,8 @@ fullFrame = [qInts(AGCPreamble);...
     qInts(TimingPreamble);...
     qBits(DFETraining);...
     qBits(HeaderDataPad);...
-    qBits(txDataScram)];
+    qBits(txDataScram);...
+    qInts(padDataEnd)];
 
 %% Filter
 chanFilterSpan = 8;  % Filter span in symbols
@@ -87,11 +92,24 @@ save('words64bits.mat','words64bits');
 save('IQData.mat','fullFrameFilt');
 
 
-%% Radio
-% Setup radios
-%centerFreq = 2.4e9;
-%tx=sdrtx('Pluto', 'RadioID', 'usb:0', 'BasebandSampleRate', 1e6);
-%tx=sdrtx('ZC706 and FMCOMMS2/3/4', 'BasebandSampleRate', 20e6);
-%tx.CenterFrequency = centerFreq;
-%tx.transmitRepeat(fullFrameFilt);
+% %% Radio
+% % Setup radios
+% centerFreq = 2.42e9;%950e6;
+% tx=sdrtx('ZC706 and FMCOMMS2/3/4', 'BasebandSampleRate', 20e6);tx.BypassUserLogic = true;
+% %tx=sdrtx('Pluto', 'RadioID', 'usb:0', 'BasebandSampleRate', 20e6,'Gain',-20);
+% tx.CenterFrequency = centerFreq;
+% tx.transmitRepeat(fullFrameFilt);
+% pause(1);
+% 
+% %rx=sdrrx('ZC706 and FMCOMMS2/3/4', 'BasebandSampleRate', 20e6);rx.BypassUserLogic = true;
+% rx=sdrrx('Pluto', 'RadioID', 'usb:0', 'BasebandSampleRate', 20e6);
+% rx.CenterFrequency = centerFreq; rx.SamplesPerFrame = 2^16;
+% %data = rx();data = rx();data = rx();
+% data = rx();%data = rx();
+% a = comm.BasebandFileWriter;
+% a(data);
+% a.release();
+% clear rx tx
+
+
 
