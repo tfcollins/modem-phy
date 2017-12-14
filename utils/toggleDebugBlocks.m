@@ -1,6 +1,7 @@
 function toggleDebugBlocks(modelname,turnOn)
 
-% toggleDebugBlocks(bdroot,true)
+% val=true (uncomment), val=false (comment)
+% toggleDebugBlocks(bdroot,val)
 
 keywords = {'DEBUG'}; % not case sensitive
 

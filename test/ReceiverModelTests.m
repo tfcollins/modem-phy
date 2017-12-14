@@ -113,6 +113,9 @@ classdef (Abstract) ReceiverModelTests < matlab.unittest.TestCase
             % Set model parameters
             load_system(modelname);
             %open(modelname);
+            % Disable linked libraries so we can remove scopes
+            %set_param(gcb,'LinkStatus','none')
+            set_param([modelname,'/Receiver HDL'],'LinkStatus','none')
             if ~testCase.EnableVisuals
                 testCase.DisableScopes(modelname,testCase.ScopesToDisable);
             end

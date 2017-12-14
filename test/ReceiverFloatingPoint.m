@@ -193,7 +193,7 @@ while processedSamples<length(rxSampFC)
         return
     end
     %% Measure EVM over packet
-    packetSymbols = rxPayloadEq(round((HeaderLen*2+1:HeaderLen*2+payloadLenA-nTail)./bitsPerSym));
+    packetSymbols = rxPayloadEq(round((HeaderLen*2+1:HeaderLen*2+payloadLenA-nTail*0)./bitsPerSym));
     [rmsEVM,maxEVM] = evm(packetSymbols);
     rmsEVMs = [rmsEVMs rmsEVM];
     maxEVMs = [maxEVMs maxEVM];
@@ -206,13 +206,15 @@ while processedSamples<length(rxSampFC)
     % Removing coding delay
     rxDataWithTail = dataHard(tbl+1:end);
     % Remove tail bits
-    rxDataWithCRC = rxDataWithTail(1:end-nTail);
+    rxDataWithCRC = rxDataWithTail(1:end-nTail*1);
     % Check CRC
     [rxData,e] = crcDec(rxDataWithCRC);
     if e
         log(testCase,2,'CRC Failed.');
         crcChecks = [crcChecks;1];
         failures = [failures;4];
+        ref = load('bits.mat');
+        log(testCase,2,['BER: ',num2str(mean(ref.bits~=rxDataWithCRC))]);
     else
         log(testCase,2,'CRC Passed.');
         crcChecks = [crcChecks;0];
@@ -254,7 +256,7 @@ cor = abs(filter(xPreamble(end:-1:1).',1,signal));
 cor(1:preambleLength) = 0;
 
 %cor = cor./eng;
-stem(cor);
+%stem(cor);
 ind = find(cor./eng >= threshold, 1, 'first');
 %stem(cor./eng);
 % % look in first half only
@@ -305,7 +307,7 @@ numTrainingSymbols = length(trainingSymbols);
 
 ind = 0;
 equalizedData = complex(zeros(length(data),1));
-mu = 0.001;
+mu = 0.01;
 
 for s=1:SamplesPerSymbol:length(data)
     ind = ind + 1;
@@ -335,7 +337,7 @@ for s=1:SamplesPerSymbol:length(data)
     
     % Update taps
     forwardTaps  = forwardTaps  + mu*e*inputBuffer;
-    %backwardTaps = backwardTaps - mu*e*decisionBuffer;
+    backwardTaps = backwardTaps - mu*e*decisionBuffer;
     
     % Update decision buffer
     decisionBuffer = [d; decisionBuffer(1:end-1)];

@@ -21,11 +21,11 @@ classdef (TestTags = {'MATLAB','Float'})  matlab_tests < ReceiverModelTests
         end
     end
     %%
-    methods (Test, TestTags = {'Functional','Simulation','Frequency'})
+    methods (Test, TestTags = {'Functional','Simulation','Gaps'})
         function testPacketGapsSimulationFloatingPointSim(testCase)
             transmitter = 'simulation';
             receiver = 'FloatingPointMATLAB';
-            gaps = [0, 1e2, 1e3, 3e3, 1e4];
+            gaps = [0, 2e2, 1e3, 3e3, 1e4];
             testCase.testPacketGaps(transmitter, receiver, gaps);
         end
     end
