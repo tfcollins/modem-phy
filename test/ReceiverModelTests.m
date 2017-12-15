@@ -16,7 +16,7 @@ classdef (Abstract) ReceiverModelTests < matlab.unittest.TestCase
         ScopesToDisable = {'Constellation','Scope','Spectrum'};
         EnableVisuals = false;
         HardwareCheck = false;
-        SimChannelSNR = 25;
+        SimChannelSNR = 20;
     end
     
     properties (Constant)
@@ -115,7 +115,11 @@ classdef (Abstract) ReceiverModelTests < matlab.unittest.TestCase
             %open(modelname);
             % Disable linked libraries so we can remove scopes
             %set_param(gcb,'LinkStatus','none')
-            set_param([modelname,'/Receiver HDL'],'LinkStatus','none')
+            if contains(lower(modelname),'fixed')
+                set_param([modelname,'/Receiver HDL'],'LinkStatus','none')
+            else
+                set_param([modelname,'/Receiver'],'LinkStatus','none')
+            end
             if ~testCase.EnableVisuals
                 testCase.DisableScopes(modelname,testCase.ScopesToDisable);
             end
@@ -269,7 +273,7 @@ classdef (Abstract) ReceiverModelTests < matlab.unittest.TestCase
                         RxIQ_many_offset = awgn(RxIQ_many_offset,testCase.SimChannelSNR,'measured');
                         RxIQ_many_offset = testCase.ScaleInput(RxIQ_many_offset);
                     else
-                        RxIQ = 0.7.*generateFrame('Packets',testCase.FramesToReceive);                    % Apply to source
+                        RxIQ = 0.7.*generateFrame('Packets',testCase.FramesToReceive+1);                    % Apply to source
                         pfo.release();
                         pfo.FrequencyOffset = offset;
                         RxIQ_many_offset = pfo(RxIQ);

@@ -59,7 +59,7 @@ classdef (TestTags = {'Simulink'}) simulink_tests < ReceiverModelTests
             transmitter = 'simulation';
             receiver = 'FloatingPointSimulink';
             %packetSizesBytes = [1000,10,100];
-            packetSizesBits = 64*[1,10,100,10];
+            packetSizesBits = 64*[1,10,100,10,1]; % Need 1 extra to push through RX
             testCase.testPacketMultipleSizes(transmitter, receiver, packetSizesBits);
         end
     end
