@@ -1,6 +1,8 @@
 *.m~
 *.mexa64
-hdl_prj/*
-slprj/*
+hdl_prj*
+slprj*
 example.bb
+*.mexw64
+*.autosave
 

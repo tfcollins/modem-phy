@@ -1,6 +1,6 @@
 
-v=ver('matlab');
-switch v.Release
+v=ver('matlab'); Release = v.Release;
+switch Release
     case '(R2017a)'
         vivado = '2016.2';
     case '(R2017b)'

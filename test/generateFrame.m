@@ -56,8 +56,8 @@ rng(10);
 M = 4;
 %nPayloadSymbols  = 8*200;  % Number of payload symbols (QPSK and 1/2 rate coding==bits)
 rate = 1/2;
-%txData = randi([0 1], nPayloadSymbols*log2(M)*rate, 1);
-txData = repmat([0;1], nPayloadSymbols*log2(M)*rate/2, 1); % Repeating [0 1]
+txData = randi([0 1], nPayloadSymbols*log2(M)*rate, 1);
+%txData = repmat([0;1], nPayloadSymbols*log2(M)*rate/2, 1); % Repeating [0 1]
 
 % (DEBUG ONLY) Add end sequence to check at receiver
 xTailData = repmat([1 0 1 1 0 0 1 1 1 1].',4,1);

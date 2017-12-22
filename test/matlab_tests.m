@@ -9,7 +9,7 @@ classdef (TestTags = {'MATLAB','Float'})  matlab_tests < ReceiverModelTests
         end
     end
     %%
-    methods (Test, TestTags = {'Environmental','Radio'})
+    methods (Test, TestTags = {'Environmental','Radio','Frequency'})
         function testFrequencyOffsetsFloatingPointHW(testCase)
             % This test assumes loopback with cabling,
             % if antennas are used the gain setting need to be considered.

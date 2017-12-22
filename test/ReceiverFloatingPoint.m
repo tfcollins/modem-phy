@@ -97,10 +97,13 @@ evm = comm.EVM('MaximumEVMOutputPort',true, ...
 if testCase.EnableVisuals
 constd = comm.ConstellationDiagram('SamplesPerSymbol', 1,...
     'Name','constd','ReferenceConstellation',PSKConstellation,...
-    'MeasurementInterval',1024);
+    'MeasurementInterval',1024,...
+    'Name','RX');
 constd2 = comm.ConstellationDiagram('SamplesPerSymbol', 1,...
     'Name','constd2','ReferenceConstellation',PSKConstellation,...
-    'MeasurementInterval',1024);
+    'MeasurementInterval',1024,...
+    'Name','PostEQ');
+constd2.Position = constd.Position + [500 0 0 0];
 end
 
 log(testCase,4,'Receive Processing Started.');
@@ -162,7 +165,7 @@ while processedSamples<length(rxSampFC)
     if testCase.EnableVisuals
     inds = constd.MeasurementInterval;
     for k=1:inds:length(rxPayloadEq)-inds
-        constd(rxSig(k:k+inds-1));
+        constd(frame(k:k+inds-1));
         constd2(rxPayloadEq(k:k+inds-1));
         pause(0.1);
     end

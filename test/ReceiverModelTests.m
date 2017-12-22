@@ -7,8 +7,8 @@ classdef (Abstract) ReceiverModelTests < matlab.unittest.TestCase
     
     properties
         radioObject = [];
-        SampleRate = 1e6;
-        CenterFrequency = 1e9;
+        SampleRate = 20e6;
+        CenterFrequency = 900e6;
         FPMATLABReceiverFunctionName = 'ReceiverFloatingPoint';
         XPSimulinkReceiverModelName = 'Receiver_UnderTest_Fixed';
         FPSimulinkReceiverModelName = 'Receiver_UnderTest_Float';
@@ -17,11 +17,21 @@ classdef (Abstract) ReceiverModelTests < matlab.unittest.TestCase
         EnableVisuals = false;
         HardwareCheck = false;
         SimChannelSNR = 20;
+        
+        transmitterDevice = 'ZC706 and FMCOMMS2/3/4';
+        %transmitterDevice = 'Pluto';
+        receiverDevice = 'ZC706 and FMCOMMS2/3/4';
+        %receiverDevice = 'Pluto';
+        
+        % Pluto only
+        transmitterRadioID = 'usb:1';
+        receiverRadioID = 'usb:0';
+        
     end
     
     properties (Constant)
-        RadioDefaultRXGainConfig=struct('Gain',20,'Mode','AGC Slow Attack');
-        RadioDefaultTXGain = -30;
+        RadioDefaultRXGainConfig=struct('Gain',50,'Mode','AGC Slow Attack');
+        RadioDefaultTXGain = -20;%-30;
     end
     
     properties (Access = private)
@@ -105,7 +115,7 @@ classdef (Abstract) ReceiverModelTests < matlab.unittest.TestCase
             % Save data to file for model
             bb = comm.BasebandFileWriter('Filename','example.bb',...
                 'CenterFrequency',testCase.CenterFrequency,...
-                'SampleRate',testCase.SampleRate);
+                'SampleRate',1e6);%testCase.SampleRate);
             % Cast to fixed if necessary and save data
             bb(RxIQ);
             bb.release();
@@ -130,7 +140,7 @@ classdef (Abstract) ReceiverModelTests < matlab.unittest.TestCase
                 'Filename','example.bb');
             set_param([modelname,'/Baseband File Reader'],...
                 'SamplesPerFrame',num2str(length(RxIQ)));
-            stopTime = length(RxIQ)*1.1/testCase.SampleRate;
+            stopTime = length(RxIQ)*1.1/1e6;%testCase.SampleRate;
             set_param(modelname,'StopTime',num2str(stopTime))
             % Run receiver
             sim(modelname);
@@ -176,9 +186,16 @@ classdef (Abstract) ReceiverModelTests < matlab.unittest.TestCase
             else
                 Gain = TXGain;
             end
-            tx = sdrtx('Pluto','BasebandSampleRate',testCase.SampleRate,...
+            %tx = sdrtx('ZC706 and FMCOMMS2/3/4',... %'Pluto',...
+            tx = sdrtx(testCase.transmitterDevice,... %'Pluto',...
+                'BasebandSampleRate',testCase.SampleRate,...
                 'CenterFrequency',testCase.CenterFrequency+freqOffset,...
                 'Gain',Gain);
+            if ~strcmp(tx.DeviceName,'Pluto')
+                tx.BypassUserLogic = true;
+            else
+                tx.RadioID = testCase.transmitterRadioID;
+            end
             % RX
             if isempty(RXGainConfig)
                 Gain = testCase.RadioDefaultRXGainConfig.Gain;
@@ -187,15 +204,28 @@ classdef (Abstract) ReceiverModelTests < matlab.unittest.TestCase
                 Gain = RXGainConfig.Gain;
                 GainMode = RXGainConfig.Mode;
             end
-            rx = sdrrx('Pluto','BasebandSampleRate',testCase.SampleRate,...
+            rx = sdrrx(testCase.receiverDevice,...
+                'BasebandSampleRate',testCase.SampleRate,...
                 'CenterFrequency',testCase.CenterFrequency,...
                 'OutputDataType',odt,...
                 'SamplesPerFrame',ceil(length(RxIQ)*(testCase.FramesToReceive+2)/testCase.FramesToReceive),...
                 'GainSource', GainMode,'Gain',Gain);
+            if ~strcmp(rx.DeviceName,'Pluto')
+                rx.BypassUserLogic = true;
+            else
+                rx.RadioID = testCase.receiverRadioID;
+            end
             tx.transmitRepeat(RxIQ);
             pause(1); % Let transmitter startup
             rx();rx();rx(); % Let AGC settle
-            RxIQ_many_offset = rx();
+            [RxIQ_many_offset,l,o] = rx();
+            %RxIQ_many_offset = double(RxIQ_many_offset)./(2^15);
+            %RxIQ_many_offset = double(RxIQ_many_offset)./(max(abs(RxIQ_many_offset)));
+            if l==0
+                error('Zero samples returned from radio');
+            elseif o
+                warning('Samples lost at receiver');
+            end
             clear tx rx;
         end
         

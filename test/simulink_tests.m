@@ -31,7 +31,8 @@ classdef (TestTags = {'Simulink'}) simulink_tests < ReceiverModelTests
         function testFrequencyOffsetsFixedPointHW(testCase)
             transmitter = 'radio';
             receiver = 'FixedPointSimulink';
-            frequencies = [0,1e2,1e3,3e3];
+            %frequencies = [0,1e2,1e3,3e3];
+            frequencies = [40e3,60e3];
             testCase.testPacketFrequencyOffset(transmitter, receiver, frequencies);
         end
     end
