@@ -1,6 +1,6 @@
 classdef (TestTags = {'HDL'}) hdl_tests < ReceiverModelTests & HDLModelTests
     %% Frequency offset tests
-    methods (Test, TestTags = {'Environmental','Simulation','Fixed'})
+    methods (Test, TestTags = {'Environmental','Radio','Fixed'})
         %%
         function testFrequencyOffsetsPlutoTXHDL(testCase)
             designFunctionName = 'hdlworkflow_combinedTxRx';
