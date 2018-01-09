@@ -45,7 +45,7 @@ xTrain     = step(hPSKMod,DFETraining);
 
 %% Channel coding and scrambler
 trellis = poly2trellis(7,[171 133]);
-tbl = 32;
+tbl = 30;
 rate = 1/2;
 N = 2;
 descr = comm.Descrambler(N,'1 + z^-1 + z^-3 + z^-5+ z^-7',...
@@ -218,6 +218,8 @@ while processedSamples<length(rxSampFC)
         failures = [failures;4];
         ref = load('bits.mat');
         log(testCase,2,['BER: ',num2str(mean(ref.bits~=rxDataWithCRC))]);
+        %disp(find(ref.bits~=rxDataWithCRC));
+        %figure(2);plot(cumsum(ref.bits~=rxDataWithCRC));pause(2);
     else
         log(testCase,2,'CRC Passed.');
         crcChecks = [crcChecks;0];
@@ -269,7 +271,7 @@ ind = find(cor./eng >= threshold, 1, 'first');
 % cor = cor>(max(cor)*0.9);
 % [~,ind] = find(cor==1);
 % %[val,ind] = max(cor);
-% stem(cor);
+%stem(cor);pause(1);
 
 %ind = find(cor);
 
