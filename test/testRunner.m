@@ -6,6 +6,8 @@ import matlab.unittest.selectors.HasTag
 import matlab.unittest.plugins.TestRunProgressPlugin
 import matlab.unittest.plugins.LoggingPlugin
 import matlab.unittest.plugins.DiagnosticsRecordingPlugin;
+%import matlab.unittest.plugins.StopOnFailuresPlugin;
+
 addpath('hdl');
 %% Pick Tags
 %Tags = {'Radio','Simulink','Environmental','Fixed'};
@@ -35,6 +37,7 @@ runner.addPlugin(p);
 p = TestRunProgressPlugin.withVerbosity(4);
 runner.addPlugin(p);
 runner.addPlugin(DiagnosticsRecordingPlugin);
+%runner.addPlugin(StopOnFailuresPlugin);
 %% Run Tests
 if license('test','Distrib_Computing_Toolbox')
     r = runInParallel(runner,suites);
