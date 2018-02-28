@@ -51,7 +51,7 @@ PayloadCodedLen = (length(frame)+0)/rate;
 HeaderData = bitget(PayloadCodedLen,1:HeaderLen).';
 
 % Repeatatively encode bits
-HeaderDataPad = reshape([HeaderData HeaderData].',1,HeaderLen*2).';
+HeaderDataPad = reshape([HeaderData ~HeaderData].',1,HeaderLen*2).';
 
 %% Modulate
 qBits = comm.QPSKModulator('BitInput',true,'SymbolMapping','Binary');

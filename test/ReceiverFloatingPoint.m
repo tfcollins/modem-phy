@@ -175,7 +175,7 @@ while processedSamples<length(rxSampFC)
     rxData = step(hPSKDemod, rxPayloadEq);
     % Decode header and extract payload
     payloadLenA = bi2de(rxData(1:2:HeaderLen*2).');
-    payloadLenB = bi2de(rxData(2:2:HeaderLen*2).');
+    payloadLenB = bi2de(~rxData(2:2:HeaderLen*2).');
     if (payloadLenA~=payloadLenB) || (payloadLenA==0)
         log(testCase,4,['Header not decoded correctly (possible misdetection): ',num2str(payloadLenA),' ',num2str(payloadLenB)]);
         processedSamples = processedSamples + (chanFilterDelay + nTrain + 1);
