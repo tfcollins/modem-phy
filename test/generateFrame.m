@@ -67,19 +67,20 @@ lagBits = randi([0 1],1*tbl/rate,1);
 crc = comm.CRCGenerator('Polynomial','z^32 + z^26 + z^23 + z^22 + z^16 + z^12 + z^11 + z^10 + z^8 + z^7 + z^5 + z^4 + z^2 + z + 1');
 frame = [crc(txData); xTailData; lagBits];
 
-% Convolutionally encode the data
-trellis = poly2trellis(7,[171 133]);
-txDataEnc = convenc(frame,trellis);
 % Scramble
 N = 2;
 scr  = comm.Scrambler(N, '1 + z^-1 + z^-3 + z^-5+ z^-7',...
     'InitialConditions',[0 1 0 0 0 1 0]);
-txDataScram = scr(txDataEnc);
+txDataScram = scr(frame);
+
+% Convolutionally encode the data
+trellis = poly2trellis(7,[171 133]);
+txDataEnc = convenc(txDataScram,trellis);
 
 
 %% Header
 HeaderLen = 16; % Bits
-PayloadCodedLen = (length(frame)+0)/rate;
+PayloadCodedLen = (length(txDataScram)+0)/rate;
 HeaderData = bitget(PayloadCodedLen,1:HeaderLen).';
 
 % Repeatatively encode bits
@@ -102,7 +103,7 @@ fullFrame = [qInts(AGCPreamble);...
     qInts(TimingPreamble);...
     qBits(DFETraining);...
     qBits(HeaderDataPad);...
-    qBits(txDataScram);
+    qBits(txDataEnc);
     qInts(padData)];
 
 % % Add padding

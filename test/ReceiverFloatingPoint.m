@@ -52,7 +52,8 @@ descr = comm.Descrambler(N,'1 + z^-1 + z^-3 + z^-5+ z^-7',...
     'InitialConditions',[0 1 0 0 0 1 0]);
 
 %% CRC
-crcDec = comm.CRCDetector ('Polynomial','z^32 + z^26 + z^23 + z^22 + z^16 + z^12 + z^11 + z^10 + z^8 + z^7 + z^5 + z^4 + z^2 + z + 1');
+crcDec = comm.CRCDetector('Polynomial',...
+    'z^32 + z^26 + z^23 + z^22 + z^16 + z^12 + z^11 + z^10 + z^8 + z^7 + z^5 + z^4 + z^2 + z + 1');
 
 %% Header
 HeaderLen = 16; % Bits
@@ -202,14 +203,15 @@ while processedSamples<length(rxSampFC)
     maxEVMs = [maxEVMs maxEVM];
     log(testCase,4,sprintf('Frame EVM: %f RMS (Max %f)\n',rmsEVM,maxEVM));
 
-    % Descramble
-    rxDescram = descr(rxData);
     % Viterbi decode the demodulated data
-    dataHard = vitdec(rxDescram,trellis,tbl,'cont','hard');
+    dataHard = vitdec(rxData,trellis,tbl,'cont','hard');
     % Removing coding delay
     rxDataWithTail = dataHard(tbl+1:end);
     % Remove tail bits
-    rxDataWithCRC = rxDataWithTail(1:end-nTail*1);
+    rxDataWithCRCScram = rxDataWithTail(1:end-nTail*1);
+    % Descramble
+    descr.reset();
+    rxDataWithCRC = descr(rxDataWithCRCScram);
     % Check CRC
     [rxData,e] = crcDec(rxDataWithCRC);
     if e
