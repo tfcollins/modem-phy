@@ -126,3 +126,12 @@ fullFrameFilt = hTxFilt(fullFrame);
 % Save bits for debugging
 bits = crc(txData);
 save('bits.mat','bits','frame','txDataEnc');
+
+% %% Save to mat files
+% HeaderBytes = bitget(nPayloadSymbols/8,1:HeaderLen).';
+% words16bits = bi2de(reshape([HeaderBytes;txData],16,length([HeaderBytes;txData])/16).','right-msb');
+% HeaderBytes = bitget(nPayloadSymbols/8,1:64).';
+% words64bits = bi2de(reshape([HeaderBytes;txData],64,length([HeaderBytes;txData])/64).','right-msb');
+% save('words16bits.mat','words16bits');
+% save('words64bits.mat','words64bits');
+% save('IQData.mat','fullFrameFilt');
