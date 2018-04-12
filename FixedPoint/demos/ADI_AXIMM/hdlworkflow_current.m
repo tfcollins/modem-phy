@@ -373,7 +373,7 @@ hWC.OperatingSystem = 'Linux';
 hWC.RunExternalBuild = true;
 %hWC.TclFileForSynthesisBuild = hdlcoder.BuildOption.Default;
 hWC.TclFileForSynthesisBuild = hdlcoder.BuildOption.Custom;
-hWC.CustomBuildTclFile = 'C:\Work\modem-phy-aximm\FixedPoint\demos\ADI_AXIMM\adi_build.tcl';
+hWC.CustomBuildTclFile = 'adi_build.tcl';
 
 % Set properties related to 'RunTaskProgramTargetDevice' Task
 hWC.ProgrammingMethod = hdlcoder.ProgrammingMethod.Download;
