@@ -1,8 +1,8 @@
 %--------------------------------------------------------------------------
 % HDL Workflow Script
-% Generated with MATLAB 9.3 (R2017b) at 17:22:56 on 15/03/2018
+% Generated with MATLAB 9.3 (R2017b) at 17:40:49 on 17/04/2018
 % This script was generated using the following parameter values:
-%     Filename  : 'C:\Work\modem-phy-aximm\FixedPoint\demos\ADI_AXIMM\hdlworkflow_current.m'
+%     Filename  : '/tmp/modem-phy/FixedPoint/demos/ADI_AXIMM/hdlworkflow.m'
 %     Overwrite : true
 %     Comments  : true
 %     Headers   : true
@@ -26,7 +26,7 @@ hdlset_param('combinedTxRx_ADIDMA', 'SynthesisToolChipFamily', 'Zynq');
 hdlset_param('combinedTxRx_ADIDMA', 'SynthesisToolDeviceName', 'xc7z035i');
 hdlset_param('combinedTxRx_ADIDMA', 'SynthesisToolPackageName', 'fbg676');
 hdlset_param('combinedTxRx_ADIDMA', 'SynthesisToolSpeedValue', '-2L');
-hdlset_param('combinedTxRx_ADIDMA', 'TargetDirectory', 'hdl_prj_CURRENT\hdlsrc');
+hdlset_param('combinedTxRx_ADIDMA', 'TargetDirectory', 'hdl_prj/hdlsrc');
 hdlset_param('combinedTxRx_ADIDMA', 'TargetLanguage', 'Verilog');
 hdlset_param('combinedTxRx_ADIDMA', 'TargetPlatform', 'AnalogDevices adrv9361z7035 box lvds (Rx & Tx)');
 hdlset_param('combinedTxRx_ADIDMA', 'Workflow', 'IP Core Generation');
@@ -102,10 +102,6 @@ hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/Loopback', 'IOInterfaceMapp
 hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/BypassCoding', 'IOInterface', 'AXI4-Lite');
 hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/BypassCoding', 'IOInterfaceMapping', 'x"130"');
 
-% Set Inport HDL parameters
-hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/ViterbiDebugSelect', 'IOInterface', 'AXI4-Lite');
-hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/ViterbiDebugSelect', 'IOInterfaceMapping', 'x"134"');
-
 % Set Outport HDL parameters
 hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/IQ Interface Mapper/bytesOut', 'IOInterface', 'No Interface Specified');
 hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/IQ Interface Mapper/bytesOut', 'IOInterfaceMapping', '');
@@ -170,10 +166,6 @@ hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/Receiver HDL/PDThreshold', 
 hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/Receiver HDL/PDThreshold', 'IOInterfaceMapping', '[0]');
 
 % Set Inport HDL parameters
-hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/Receiver HDL/ViterbiDebugSelect', 'IOInterface', 'Rx data Valid In');
-hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/Receiver HDL/ViterbiDebugSelect', 'IOInterfaceMapping', '[0]');
-
-% Set Inport HDL parameters
 hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/Receiver HDL/BypassCoding', 'IOInterface', 'Rx data Valid In');
 hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/Receiver HDL/BypassCoding', 'IOInterfaceMapping', '[0]');
 
@@ -206,24 +198,12 @@ hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/Receiver HDL/validIQ', 'IOI
 hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/Receiver HDL/validIQ', 'IOInterfaceMapping', '[0]');
 
 % Set Outport HDL parameters
-hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/Receiver HDL/crcErr', 'IOInterface', 'No Interface Specified');
-hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/Receiver HDL/crcErr', 'IOInterfaceMapping', '');
-
-% Set Outport HDL parameters
-hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/Receiver HDL/validCRC', 'IOInterface', 'No Interface Specified');
-hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/Receiver HDL/validCRC', 'IOInterfaceMapping', '');
-
-% Set Outport HDL parameters
-hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/Receiver HDL/endFlag', 'IOInterface', 'No Interface Specified');
-hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/Receiver HDL/endFlag', 'IOInterfaceMapping', '');
-
-% Set Outport HDL parameters
 hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/Receiver HDL/DebugSelection', 'IOInterface', 'Rx data Valid Out');
 hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/Receiver HDL/DebugSelection', 'IOInterfaceMapping', '[0]');
 
 % Set Outport HDL parameters
-hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/Receiver HDL/ViterbiDebugOut', 'IOInterface', 'No Interface Specified');
-hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/Receiver HDL/ViterbiDebugOut', 'IOInterfaceMapping', '');
+hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/Receiver HDL/RxTransferComplete', 'IOInterface', 'Rx data Valid Out');
+hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/Receiver HDL/RxTransferComplete', 'IOInterfaceMapping', '[0]');
 
 % Set SubSystem HDL parameters
 hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/Transmitter HDL', 'ProcessorFPGASynchronization', 'Free running');
@@ -261,12 +241,8 @@ hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/Transmitter HDL/Need Data',
 hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/Transmitter HDL/Need Data', 'IOInterfaceMapping', '');
 
 % Set Outport HDL parameters
-hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/Transmitter HDL/TxPacketCount', 'IOInterface', 'Tx data Valid Out');
-hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/Transmitter HDL/TxPacketCount', 'IOInterfaceMapping', '[0]');
-
-% Set Outport HDL parameters
-hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/Transmitter HDL/WrongBits', 'IOInterface', 'No Interface Specified');
-hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/Transmitter HDL/WrongBits', 'IOInterfaceMapping', '');
+hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/Transmitter HDL/TxTransferComplete', 'IOInterface', 'Tx data Valid Out');
+hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/Transmitter HDL/TxTransferComplete', 'IOInterfaceMapping', '[0]');
 
 % Set Outport HDL parameters
 hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/ToRadioR', 'IOInterface', 'AD9361 DAC Data I0 [0:15]');
@@ -313,14 +289,6 @@ hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/validRx', 'IOInterface', 'N
 hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/validRx', 'IOInterfaceMapping', '');
 
 % Set Outport HDL parameters
-hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/crcErrorsAXI', 'IOInterface', 'AXI4-Lite');
-hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/crcErrorsAXI', 'IOInterfaceMapping', 'x"138"');
-
-% Set Outport HDL parameters
-hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/packetsCountAXI', 'IOInterface', 'AXI4-Lite');
-hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/packetsCountAXI', 'IOInterfaceMapping', 'x"13C"');
-
-% Set Outport HDL parameters
 hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/TxDMASelectOut', 'IOInterface', 'Tx Mux Sel');
 hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/TxDMASelectOut', 'IOInterfaceMapping', '[0]');
 
@@ -329,16 +297,12 @@ hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/debugSelectionAXI', 'IOInte
 hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/debugSelectionAXI', 'IOInterfaceMapping', 'x"140"');
 
 % Set Outport HDL parameters
-hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/payloadLenLastAXI', 'IOInterface', 'AXI4-Lite');
-hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/payloadLenLastAXI', 'IOInterfaceMapping', 'x"144"');
+hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/TxTransferComplete', 'IOInterface', 'No Interface Specified');
+hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/TxTransferComplete', 'IOInterfaceMapping', '');
 
 % Set Outport HDL parameters
-hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/TxPacketCount', 'IOInterface', 'AXI4-Lite');
-hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/TxPacketCount', 'IOInterfaceMapping', 'x"148"');
-
-% Set Outport HDL parameters
-hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/RefWordErrorsAXI', 'IOInterface', 'AXI4-Lite');
-hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/RefWordErrorsAXI', 'IOInterfaceMapping', 'x"14C"');
+hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/RxTransferComplete', 'IOInterface', 'No Interface Specified');
+hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/RxTransferComplete', 'IOInterfaceMapping', '');
 
 
 %% Workflow Configuration Settings
@@ -346,7 +310,7 @@ hdlset_param('combinedTxRx_ADIDMA/Combined TX and RX/RefWordErrorsAXI', 'IOInter
 hWC = hdlcoder.WorkflowConfig('SynthesisTool','Xilinx Vivado','TargetWorkflow','IP Core Generation');
 
 % Specify the top level project directory
-hWC.ProjectFolder = 'hdl_prj_CURRENT';
+hWC.ProjectFolder = 'hdl_prj';
 hWC.ReferenceDesignToolVersion = '2016.4';
 hWC.IgnoreToolVersionMismatch = false;
 
@@ -367,11 +331,10 @@ hWC.AdditionalProjectCreationTclFiles = '';
 hWC.EnableIPCaching = false;
 
 % Set properties related to 'RunTaskGenerateSoftwareInterfaceModel' Task
-hWC.OperatingSystem = 'Linux';
+hWC.OperatingSystem = '';
 
 % Set properties related to 'RunTaskBuildFPGABitstream' Task
 hWC.RunExternalBuild = true;
-%hWC.TclFileForSynthesisBuild = hdlcoder.BuildOption.Default;
 hWC.TclFileForSynthesisBuild = hdlcoder.BuildOption.Custom;
 hWC.CustomBuildTclFile = 'adi_build.tcl';
 
