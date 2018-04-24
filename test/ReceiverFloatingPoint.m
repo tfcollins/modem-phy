@@ -45,14 +45,15 @@ xTrain     = step(hPSKMod,DFETraining);
 
 %% Channel coding and scrambler
 trellis = poly2trellis(7,[171 133]);
-tbl = 32;
+tbl = 30;
 rate = 1/2;
 N = 2;
 descr = comm.Descrambler(N,'1 + z^-1 + z^-3 + z^-5+ z^-7',...
     'InitialConditions',[0 1 0 0 0 1 0]);
 
 %% CRC
-crcDec = comm.CRCDetector ('Polynomial','z^32 + z^26 + z^23 + z^22 + z^16 + z^12 + z^11 + z^10 + z^8 + z^7 + z^5 + z^4 + z^2 + z + 1');
+crcDec = comm.CRCDetector('Polynomial',...
+    'z^32 + z^26 + z^23 + z^22 + z^16 + z^12 + z^11 + z^10 + z^8 + z^7 + z^5 + z^4 + z^2 + z + 1');
 
 %% Header
 HeaderLen = 16; % Bits
@@ -175,7 +176,7 @@ while processedSamples<length(rxSampFC)
     rxData = step(hPSKDemod, rxPayloadEq);
     % Decode header and extract payload
     payloadLenA = bi2de(rxData(1:2:HeaderLen*2).');
-    payloadLenB = bi2de(rxData(2:2:HeaderLen*2).');
+    payloadLenB = bi2de(~rxData(2:2:HeaderLen*2).');
     if (payloadLenA~=payloadLenB) || (payloadLenA==0)
         log(testCase,4,['Header not decoded correctly (possible misdetection): ',num2str(payloadLenA),' ',num2str(payloadLenB)]);
         processedSamples = processedSamples + (chanFilterDelay + nTrain + 1);
@@ -202,14 +203,15 @@ while processedSamples<length(rxSampFC)
     maxEVMs = [maxEVMs maxEVM];
     log(testCase,4,sprintf('Frame EVM: %f RMS (Max %f)\n',rmsEVM,maxEVM));
 
-    % Descramble
-    rxDescram = descr(rxData);
     % Viterbi decode the demodulated data
-    dataHard = vitdec(rxDescram,trellis,tbl,'cont','hard');
+    dataHard = vitdec(rxData,trellis,tbl,'cont','hard');
     % Removing coding delay
     rxDataWithTail = dataHard(tbl+1:end);
     % Remove tail bits
-    rxDataWithCRC = rxDataWithTail(1:end-nTail*1);
+    rxDataWithCRCScram = rxDataWithTail(1:end-nTail*1);
+    % Descramble
+    descr.reset();
+    rxDataWithCRC = descr(rxDataWithCRCScram);
     % Check CRC
     [rxData,e] = crcDec(rxDataWithCRC);
     if e
@@ -218,6 +220,8 @@ while processedSamples<length(rxSampFC)
         failures = [failures;4];
         ref = load('bits.mat');
         log(testCase,2,['BER: ',num2str(mean(ref.bits~=rxDataWithCRC))]);
+        %disp(find(ref.bits~=rxDataWithCRC));
+        %figure(2);plot(cumsum(ref.bits~=rxDataWithCRC));pause(2);
     else
         log(testCase,2,'CRC Passed.');
         crcChecks = [crcChecks;0];
@@ -269,7 +273,7 @@ ind = find(cor./eng >= threshold, 1, 'first');
 % cor = cor>(max(cor)*0.9);
 % [~,ind] = find(cor==1);
 % %[val,ind] = max(cor);
-% stem(cor);
+%stem(cor);pause(1);
 
 %ind = find(cor);
 

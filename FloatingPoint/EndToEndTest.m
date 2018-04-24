@@ -77,7 +77,7 @@ crcDec = comm.CRCDetector ('Polynomial',ply);
 HeaderLen = 16; % Bits
 PayloadCodedLen = (nPayload+crcLen+nTail)/rate;
 HeaderData = bitget(PayloadCodedLen,1:HeaderLen).';
-HeaderDataPad = reshape([HeaderData HeaderData].',1,HeaderLen*2).';
+HeaderDataPad = reshape([HeaderData ~HeaderData].',1,HeaderLen*2).';
 xHeader = hPSKMod(HeaderDataPad);
 maxFrameLength = 2^16;
 
@@ -268,7 +268,7 @@ for block = 1:nBlocks
     rxData = hPSKDemod(rxPayloadEq);
     % Decode header and extract payload
     payloadLenA = bi2de(rxData(1:2:32).');
-    payloadLenB = bi2de(rxData(2:2:32).');
+    payloadLenB = bi2de(~rxData(2:2:32).');
     if payloadLenA~=payloadLenB
         disp('Header not decoded correctly, skipping')
         disp(payloadLenA); disp(payloadLenB);

@@ -53,8 +53,8 @@ seq = barker()+1;
 %preamble = zeros(16*reps,1);
 preambleFull = repmat(seq,reps,1);
 rctFilt = comm.RaisedCosineTransmitFilter('FilterSpanInSymbols', 128,...
-'RolloffFactor',0.5,...
-'OutputSamplesPerSymbol',4);
+    'RolloffFactor',0.5,...
+    'OutputSamplesPerSymbol',4);
 preambleFullFilt = rctFilt(preambleFull);
 
 %%%%%%%%%%%%
@@ -74,7 +74,7 @@ beta = 0.5;
 span = 8;
 sps = 4;
 filterGain = 1;
-coeff = rcosdesign(beta, span, sps, 'sqrt')*filterGain; 
+coeff = rcosdesign(beta, span, sps, 'sqrt')*filterGain;
 
 %%%%%%%%%%%%
 
@@ -119,3 +119,17 @@ for index=1:length(NormalizedLoopBandwidths)
 end
 K1 = fi(K1,0);
 K2 = fi(K2,0);
+
+
+%% Debug
+msg = fi(int8('Hello World 0'),0,64,0);
+msgBits = de2bi(msg,64);
+b = reshape(msgBits.',832,1)>0;
+sc = comm.Scrambler(2,[1 1 0 1 0 1 0 1],'InitialConditions',[0 1 0 0 0 1 0]);
+crc = comm.CRCGenerator('Polynomial','z^32 + z^26 + z^23 + z^22 + z^16 + z^12 + z^11 + z^10 + z^8 + z^7 + z^5 + z^4 + z^2 + z + 1');
+frameCRC = crc(b);
+dataScram = sc(frameCRC);
+trellis = poly2trellis(7,[171 133]);
+frame = convenc(dataScram,trellis);
+%frame(400) = ~frame(400);
+%reshape(de2bi(int8('Hello World 0'),64).',832,1)>0;

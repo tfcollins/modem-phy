@@ -67,23 +67,24 @@ lagBits = randi([0 1],1*tbl/rate,1);
 crc = comm.CRCGenerator('Polynomial','z^32 + z^26 + z^23 + z^22 + z^16 + z^12 + z^11 + z^10 + z^8 + z^7 + z^5 + z^4 + z^2 + z + 1');
 frame = [crc(txData); xTailData; lagBits];
 
-% Convolutionally encode the data
-trellis = poly2trellis(7,[171 133]);
-txDataEnc = convenc(frame,trellis);
 % Scramble
 N = 2;
 scr  = comm.Scrambler(N, '1 + z^-1 + z^-3 + z^-5+ z^-7',...
     'InitialConditions',[0 1 0 0 0 1 0]);
-txDataScram = scr(txDataEnc);
+txDataScram = scr(frame);
+
+% Convolutionally encode the data
+trellis = poly2trellis(7,[171 133]);
+txDataEnc = convenc(txDataScram,trellis);
 
 
 %% Header
 HeaderLen = 16; % Bits
-PayloadCodedLen = (length(frame)+0)/rate;
+PayloadCodedLen = (length(txDataScram)+0)/rate;
 HeaderData = bitget(PayloadCodedLen,1:HeaderLen).';
 
 % Repeatatively encode bits
-HeaderDataPad = reshape([HeaderData HeaderData].',1,HeaderLen*2).';
+HeaderDataPad = reshape([HeaderData ~HeaderData].',1,HeaderLen*2).';
 
 %% Random data after packet
 padData = randi([0 3],gapLen,1);
@@ -102,7 +103,7 @@ fullFrame = [qInts(AGCPreamble);...
     qInts(TimingPreamble);...
     qBits(DFETraining);...
     qBits(HeaderDataPad);...
-    qBits(txDataScram);
+    qBits(txDataEnc);
     qInts(padData)];
 
 % % Add padding
@@ -125,3 +126,12 @@ fullFrameFilt = hTxFilt(fullFrame);
 % Save bits for debugging
 bits = crc(txData);
 save('bits.mat','bits','frame','txDataEnc');
+
+% %% Save to mat files
+% HeaderBytes = bitget(nPayloadSymbols/8,1:HeaderLen).';
+% words16bits = bi2de(reshape([HeaderBytes;txData],16,length([HeaderBytes;txData])/16).','right-msb');
+% HeaderBytes = bitget(nPayloadSymbols/8,1:64).';
+% words64bits = bi2de(reshape([HeaderBytes;txData],64,length([HeaderBytes;txData])/64).','right-msb');
+% save('words16bits.mat','words16bits');
+% save('words64bits.mat','words64bits');
+% save('IQData.mat','fullFrameFilt');
